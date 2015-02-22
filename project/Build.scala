@@ -43,9 +43,10 @@ object Build extends sbt.Build {
   lazy val integrations = (project in file("coreci-integrations"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-    "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M3",
-    "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M3",
-    "org.specs2" %% "specs2" % "2.4.1" % "test"))
+      "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M3",
+      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M3",
+      "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
+      "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-integrations")
     .dependsOn(common)

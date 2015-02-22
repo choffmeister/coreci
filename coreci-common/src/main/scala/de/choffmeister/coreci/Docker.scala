@@ -32,8 +32,9 @@ class Docker(host: String, port: Int)(implicit system: ActorSystem, executor: Ex
     val entity = Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
     log.debug("Building {} from Dockerfile", fullname)
 
-    Source(HttpRequest(HttpMethods.POST, Uri("/build?t=" + fullname), entity = entity) :: Nil).via(conn.flow)
-      .map (_.entity.dataBytes.map(_.utf8String))
+    Source.single(HttpRequest(HttpMethods.POST, Uri("/build?t=" + fullname), entity = entity))
+      .via(conn.flow)
+      .map(_.entity.dataBytes.map(_.utf8String))
       .flatten(FlattenStrategy.concat)
       .map(s => JsonParser(ParserInput(s)).asJsObject)
   }
