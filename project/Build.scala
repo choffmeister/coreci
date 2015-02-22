@@ -12,7 +12,7 @@ object Build extends sbt.Build {
 
   lazy val coordinateSettings = Seq(
     organization := "de.choffmeister",
-    version := "0.0.0")
+    version := "0.0.1-SNAPSHOT")
 
   lazy val resolverSettings = Seq(
     resolvers += Resolver.sonatypeRepo("snapshots"),
