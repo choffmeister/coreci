@@ -1,9 +1,8 @@
 package de.choffmeister.coreci.http
 
 import akka.actor._
-import akka.http.model._
-import akka.http.server.Route
 import akka.http.server.Directives._
+import akka.http.server.Route
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.models._
