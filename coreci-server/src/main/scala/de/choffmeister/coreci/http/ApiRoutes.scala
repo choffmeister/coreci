@@ -2,43 +2,27 @@ package de.choffmeister.coreci.http
 
 import akka.actor._
 import akka.http.server.Directives._
-import akka.http.server.Route
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
+import de.choffmeister.coreci.integrations._
 import de.choffmeister.coreci.models._
-import spray.json.RootJsonFormat
 
 import scala.concurrent.ExecutionContext
 
 class ApiRoutes(database: Database)(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends JsonProtocol {
-  lazy val routes =
-    crud("users", database.users)
+  val github = new GitHubIntegration()
+  val integrations = github :: Nil
 
-  private def crud[T <: BaseModel](name: String, table: Table[T])(implicit jsonFormat: RootJsonFormat[T]): Route =
-    pathPrefix(name) {
-      pathEnd {
-        get {
-          complete(table.all)
-        } ~
-        post {
-          entity(as[T]) { obj =>
-            complete(table.insert(obj))
-          }
-        }
-      } ~
-      path(BSONObjectIDSegment) { id =>
-        get {
-          rejectEmptyResponse {
-            complete(table.find(id))
-          }
-        } ~
-        put {
-          entity(as[T]) { obj =>
-            complete(table.update(obj))
-          }
-        } ~
-        delete {
-          complete(table.delete(id).map(_ => id.stringify))
+  lazy val routes =
+    pathPrefix("integrations") {
+      pathPrefix(Segment) { name =>
+        integrations.find(inte => inte.name == name) match {
+          case Some(inte) =>
+            path("info") {
+              complete(inte.name)
+            } ~
+            inte.routes
+          case None => reject
         }
       }
     }
