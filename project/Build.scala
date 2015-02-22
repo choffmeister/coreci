@@ -15,7 +15,6 @@ object Build extends sbt.Build {
     version := "0.0.1-SNAPSHOT")
 
   lazy val resolverSettings = Seq(
-    resolvers += Resolver.sonatypeRepo("snapshots"),
     resolvers += "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/")
 
   lazy val commonSettings = Defaults.coreDefaultSettings ++ coordinateSettings ++ buildSettings ++ resolverSettings
@@ -24,7 +23,7 @@ object Build extends sbt.Build {
     packMain := Map("server" -> "de.choffmeister.coreci.Server"),
     packExtraClasspath := Map("server" -> Seq("${PROG_HOME}/conf")))
 
-  lazy val server = (project in file("coreci-server"))
+  lazy val common = (project in file("coreci-common"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.1.2",
@@ -34,12 +33,20 @@ object Build extends sbt.Build {
       "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M3",
       "com.typesafe.akka" %% "akka-slf4j" % "2.3.7",
       "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
-      "de.choffmeister" %% "auth-common" % "0.0.1",
-      "org.almoehi" %% "reactive-docker" % "0.1-SNAPSHOT",
+      "org.kie.modules" % "org-apache-commons-compress" % "6.1.0.Final",
       "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
+    .settings(name := "coreci-common")
+
+  lazy val server = (project in file("coreci-server"))
+    .settings(commonSettings: _*)
+    .settings(libraryDependencies ++= Seq(
+      "de.choffmeister" %% "auth-common" % "0.0.1",
+      "org.specs2" %% "specs2" % "2.4.1" % "test"))
+    .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")
+    .dependsOn(common)
 
   lazy val web = (project in file("coreci-web"))
     .settings(commonSettings: _*)
@@ -58,5 +65,5 @@ object Build extends sbt.Build {
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
       distDir
     })
-    .aggregate(server, web)
+    .aggregate(common, server, web)
 }
