@@ -2,12 +2,13 @@ package de.choffmeister.coreci
 
 import org.specs2.mutable._
 import org.specs2.time.NoTimeConversions
+import spray.json.JsObject
 
 import scala.concurrent.duration._
 
 class DockerSpec extends Specification with NoTimeConversions {
   "Docker" should {
-    "work" in new TestActorSystem {
+    "builds image from dockerfile" in new TestActorSystem {
       within(60.seconds) {
         val docker = new Docker("localhost", 2375)
         val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
@@ -18,10 +19,10 @@ class DockerSpec extends Specification with NoTimeConversions {
           .cmd("/usr/sbin/nginx" :: Nil)
           .expose(80)
           .expose(443)
-        val future = docker.build(dockerfile.asTar, "coreci/nginx")
-          .runForeach(println)
+        val future = docker.build(dockerfile.asTar, "coreci/nginx").flatMap { messages =>
+          messages.runFold(List.empty[JsObject])(_ :+ _)
+        }
 
-        println(dockerfile.asString)
         await(future)
       }
     }

@@ -49,7 +49,7 @@ object Build extends sbt.Build {
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-integrations")
-    .dependsOn(common)
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val server = (project in file("coreci-server"))
     .settings(commonSettings: _*)
@@ -60,7 +60,7 @@ object Build extends sbt.Build {
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")
-    .dependsOn(common, integrations)
+    .dependsOn(common % "test->test;compile->compile", integrations % "test->test;compile->compile")
 
   lazy val web = (project in file("coreci-web"))
     .settings(commonSettings: _*)

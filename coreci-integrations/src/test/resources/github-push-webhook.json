@@ -1,0 +1,165 @@
+{
+  "ref": "refs/heads/develop",
+  "before": "2b224c5e5af3093e2f226fd27c65557862f0b09d",
+  "after": "5a6a9548f7f650971c41a51f07f59797429506c1",
+  "created": false,
+  "deleted": false,
+  "forced": true,
+  "base_ref": null,
+  "compare": "https://github.com/choffmeister/coreci/compare/2b224c5e5af3...5a6a9548f7f6",
+  "commits": [
+    {
+      "id": "5a6a9548f7f650971c41a51f07f59797429506c1",
+      "distinct": true,
+      "message": "Add first simple GitHub integration hook",
+      "timestamp": "2015-02-22T20:30:48+01:00",
+      "url": "https://github.com/choffmeister/coreci/commit/5a6a9548f7f650971c41a51f07f59797429506c1",
+      "author": {
+        "name": "Christian Hoffmeister",
+        "email": "mail@choffmeister.de",
+        "username": "choffmeister"
+      },
+      "committer": {
+        "name": "Christian Hoffmeister",
+        "email": "mail@choffmeister.de",
+        "username": "choffmeister"
+      },
+      "added": [
+        "coreci-integrations/src/main/scala/de/choffmeister/coreci/integrations/GitHubIntegration.scala",
+        "coreci-integrations/src/main/scala/de/choffmeister/coreci/integrations/Integration.scala"
+      ],
+      "removed": [
+
+      ],
+      "modified": [
+        "coreci-server/src/main/scala/de/choffmeister/coreci/http/ApiRoutes.scala",
+        "project/Build.scala"
+      ]
+    }
+  ],
+  "head_commit": {
+    "id": "5a6a9548f7f650971c41a51f07f59797429506c1",
+    "distinct": true,
+    "message": "Add first simple GitHub integration hook",
+    "timestamp": "2015-02-22T20:30:48+01:00",
+    "url": "https://github.com/choffmeister/coreci/commit/5a6a9548f7f650971c41a51f07f59797429506c1",
+    "author": {
+      "name": "Christian Hoffmeister",
+      "email": "mail@choffmeister.de",
+      "username": "choffmeister"
+    },
+    "committer": {
+      "name": "Christian Hoffmeister",
+      "email": "mail@choffmeister.de",
+      "username": "choffmeister"
+    },
+    "added": [
+      "coreci-integrations/src/main/scala/de/choffmeister/coreci/integrations/GitHubIntegration.scala",
+      "coreci-integrations/src/main/scala/de/choffmeister/coreci/integrations/Integration.scala"
+    ],
+    "removed": [
+
+    ],
+    "modified": [
+      "coreci-server/src/main/scala/de/choffmeister/coreci/http/ApiRoutes.scala",
+      "project/Build.scala"
+    ]
+  },
+  "repository": {
+    "id": 31158057,
+    "name": "coreci",
+    "full_name": "choffmeister/coreci",
+    "owner": {
+      "name": "choffmeister",
+      "email": "mail@choffmeister.de"
+    },
+    "private": true,
+    "html_url": "https://github.com/choffmeister/coreci",
+    "description": "",
+    "fork": false,
+    "url": "https://github.com/choffmeister/coreci",
+    "forks_url": "https://api.github.com/repos/choffmeister/coreci/forks",
+    "keys_url": "https://api.github.com/repos/choffmeister/coreci/keys{/key_id}",
+    "collaborators_url": "https://api.github.com/repos/choffmeister/coreci/collaborators{/collaborator}",
+    "teams_url": "https://api.github.com/repos/choffmeister/coreci/teams",
+    "hooks_url": "https://api.github.com/repos/choffmeister/coreci/hooks",
+    "issue_events_url": "https://api.github.com/repos/choffmeister/coreci/issues/events{/number}",
+    "events_url": "https://api.github.com/repos/choffmeister/coreci/events",
+    "assignees_url": "https://api.github.com/repos/choffmeister/coreci/assignees{/user}",
+    "branches_url": "https://api.github.com/repos/choffmeister/coreci/branches{/branch}",
+    "tags_url": "https://api.github.com/repos/choffmeister/coreci/tags",
+    "blobs_url": "https://api.github.com/repos/choffmeister/coreci/git/blobs{/sha}",
+    "git_tags_url": "https://api.github.com/repos/choffmeister/coreci/git/tags{/sha}",
+    "git_refs_url": "https://api.github.com/repos/choffmeister/coreci/git/refs{/sha}",
+    "trees_url": "https://api.github.com/repos/choffmeister/coreci/git/trees{/sha}",
+    "statuses_url": "https://api.github.com/repos/choffmeister/coreci/statuses/{sha}",
+    "languages_url": "https://api.github.com/repos/choffmeister/coreci/languages",
+    "stargazers_url": "https://api.github.com/repos/choffmeister/coreci/stargazers",
+    "contributors_url": "https://api.github.com/repos/choffmeister/coreci/contributors",
+    "subscribers_url": "https://api.github.com/repos/choffmeister/coreci/subscribers",
+    "subscription_url": "https://api.github.com/repos/choffmeister/coreci/subscription",
+    "commits_url": "https://api.github.com/repos/choffmeister/coreci/commits{/sha}",
+    "git_commits_url": "https://api.github.com/repos/choffmeister/coreci/git/commits{/sha}",
+    "comments_url": "https://api.github.com/repos/choffmeister/coreci/comments{/number}",
+    "issue_comment_url": "https://api.github.com/repos/choffmeister/coreci/issues/comments{/number}",
+    "contents_url": "https://api.github.com/repos/choffmeister/coreci/contents/{+path}",
+    "compare_url": "https://api.github.com/repos/choffmeister/coreci/compare/{base}...{head}",
+    "merges_url": "https://api.github.com/repos/choffmeister/coreci/merges",
+    "archive_url": "https://api.github.com/repos/choffmeister/coreci/{archive_format}{/ref}",
+    "downloads_url": "https://api.github.com/repos/choffmeister/coreci/downloads",
+    "issues_url": "https://api.github.com/repos/choffmeister/coreci/issues{/number}",
+    "pulls_url": "https://api.github.com/repos/choffmeister/coreci/pulls{/number}",
+    "milestones_url": "https://api.github.com/repos/choffmeister/coreci/milestones{/number}",
+    "notifications_url": "https://api.github.com/repos/choffmeister/coreci/notifications{?since,all,participating}",
+    "labels_url": "https://api.github.com/repos/choffmeister/coreci/labels{/name}",
+    "releases_url": "https://api.github.com/repos/choffmeister/coreci/releases{/id}",
+    "created_at": 1424596532,
+    "updated_at": "2015-02-22T09:20:44Z",
+    "pushed_at": 1424633458,
+    "git_url": "git://github.com/choffmeister/coreci.git",
+    "ssh_url": "git@github.com:choffmeister/coreci.git",
+    "clone_url": "https://github.com/choffmeister/coreci.git",
+    "svn_url": "https://github.com/choffmeister/coreci",
+    "homepage": null,
+    "size": 0,
+    "stargazers_count": 0,
+    "watchers_count": 0,
+    "language": "Scala",
+    "has_issues": true,
+    "has_downloads": true,
+    "has_wiki": true,
+    "has_pages": false,
+    "forks_count": 0,
+    "mirror_url": null,
+    "open_issues_count": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "watchers": 0,
+    "default_branch": "master",
+    "stargazers": 0,
+    "master_branch": "master"
+  },
+  "pusher": {
+    "name": "choffmeister",
+    "email": "mail@choffmeister.de"
+  },
+  "sender": {
+    "login": "choffmeister",
+    "id": 671620,
+    "avatar_url": "https://avatars.githubusercontent.com/u/671620?v=3",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/choffmeister",
+    "html_url": "https://github.com/choffmeister",
+    "followers_url": "https://api.github.com/users/choffmeister/followers",
+    "following_url": "https://api.github.com/users/choffmeister/following{/other_user}",
+    "gists_url": "https://api.github.com/users/choffmeister/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/choffmeister/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/choffmeister/subscriptions",
+    "organizations_url": "https://api.github.com/users/choffmeister/orgs",
+    "repos_url": "https://api.github.com/users/choffmeister/repos",
+    "events_url": "https://api.github.com/users/choffmeister/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/choffmeister/received_events",
+    "type": "User",
+    "site_admin": false
+  }
+}

@@ -3,15 +3,15 @@ package de.choffmeister.coreci
 import akka.actor._
 import akka.http.Http
 import akka.http.model.HttpEntity.Chunked
+import akka.http.model.HttpMethods._
 import akka.http.model._
-import akka.stream.{FlattenStrategy, FlowMaterializer}
+import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
-
 import org.slf4j.LoggerFactory
-import spray.json.{JsObject, ParserInput, JsonParser}
+import spray.json.{JsObject, JsonParser, ParserInput}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent._
 
 /**
  * Docker remote client
@@ -25,17 +25,17 @@ import scala.concurrent.ExecutionContext
  */
 class Docker(host: String, port: Int)(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
   val log = LoggerFactory.getLogger(getClass)
-  val conn = Http().outgoingConnection(host, port)
 
-  def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Source[JsObject] = {
-    val fullname = repository + tag.map("%2F" + _).getOrElse("")
+  def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Future[Source[JsObject]] = {
+    val fullName = repository + tag.map("%2F" + _).getOrElse("")
     val entity = Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
-    log.debug("Building {} from Dockerfile", fullname)
+    log.debug("Building {} from Dockerfile", fullName)
 
-    Source.single(HttpRequest(HttpMethods.POST, Uri("/build?t=" + fullname), entity = entity))
-      .via(conn.flow)
-      .map(_.entity.dataBytes.map(_.utf8String))
-      .flatten(FlattenStrategy.concat)
-      .map(s => JsonParser(ParserInput(s)).asJsObject)
+    val req = HttpRequest(POST, Uri("/build?t=" + fullName), entity = entity)
+    Source.single(req).via(Http().outgoingConnection(host, port).flow)
+      .runWith(Sink.head)
+      .map { res =>
+        res.entity.dataBytes.map(_.utf8String).map(s => JsonParser(ParserInput(s)).asJsObject)
+      }
   }
 }
