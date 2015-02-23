@@ -26,7 +26,7 @@ object Build extends sbt.Build {
   lazy val common = (project in file("coreci-common"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-      "ch.qos.logback" % "logback-classic" % "1.1.2",
+      "ch.qos.logback" % "logback-classic" % "1.0.13",
       "com.typesafe" % "config" % "1.2.0",
       "com.typesafe.akka" %% "akka-actor" % "2.3.7",
       "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M3",
