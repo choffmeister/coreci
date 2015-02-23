@@ -44,11 +44,33 @@ class GitHubIntegration(implicit system: ActorSystem, executor: ExecutionContext
       .replace("{/ref}", "/" + ref))
     log.debug("Loading archive tarball from {}", archiveUrl)
 
-    val host = archiveUrl.authority.host.address()
-    val port = archiveUrl.effectivePort
-    val req = HttpRequest(GET, archiveUrl.toRelative)
-    Source.single(req).via(Http().outgoingConnection(host, port).flow)
+    get(archiveUrl, hopsRemaining = 1)
+  }
+
+  private def get(absoluteUri: Uri, headers: List[HttpHeader] = Nil, hopsRemaining: Int = 0): Future[Source[ByteString]] = {
+    val host = absoluteUri.authority.host.address()
+    val port = absoluteUri.effectivePort
+    val relativeUri = absoluteUri.toRelative
+
+    Source.single(HttpRequest(GET, relativeUri, headers))
+      .via(Http().outgoingConnection(host, port).flow)
       .runWith(Sink.head)
-      .map(_.entity.dataBytes)
+      .flatMap { res =>
+        res.status match {
+          case OK =>
+            Future(res.entity.dataBytes)
+          case Found if hopsRemaining > 0 =>
+            res.headers.find(_.is("location")).map(h => Uri(h.value())) match {
+              case Some(location) =>
+                get(location, headers, hopsRemaining - 1)
+              case _ =>
+                ???
+            }
+          case Found if hopsRemaining == 0 =>
+            ???
+          case _ =>
+            ???
+        }
+      }
   }
 }
