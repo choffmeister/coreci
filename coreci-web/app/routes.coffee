@@ -13,6 +13,8 @@ angular.module("app").config(["$injector", "$routeProvider", "$locationProvider"
     $routeProvider.when url, options
 
   route("/", "/controllers/home", "homeController")
+  route("/builds/create", "/controllers/create", "createController")
+  route("/builds/:buildId", "/controllers/build", "buildController")
 
   $routeProvider.otherwise({ templateUrl: "/notfound.html" })
   $locationProvider.html5Mode(true)
