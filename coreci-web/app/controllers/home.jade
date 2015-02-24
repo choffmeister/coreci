@@ -1,0 +1,11 @@
+div(ng-repeat="build in builds")
+
+ul.list-group
+  li.list-group-item(ng-repeat="build in builds")
+    span(ng-switch="build.status.type")
+      span.label.label-default(ng-switch-when="pending") Pending
+      span.label.label-info(ng-switch-when="running") Running
+      span.label.label-success(ng-switch-when="succeeded") Succeeded
+      span.label.label-danger(ng-switch-when="failed") Failed
+      span.label.label-default(ng-switch-default) Unknown
+    a(href="/builds/{{build.id}}") {{build.id}}

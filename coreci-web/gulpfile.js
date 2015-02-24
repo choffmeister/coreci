@@ -108,7 +108,8 @@ gulp.task('vendor-scripts', function () {
       config.src('../bower_components/jquery/dist/jquery.js'),
       config.src('../bower_components/lodash/dist/lodash.js'),
       config.src('../bower_components/bootstrap/dist/js/bootstrap.js'),
-      config.src('../bower_components/angular/angular.js')
+      config.src('../bower_components/angular/angular.js'),
+      config.src('../bower_components/angular-route/angular-route.js'),
     ])
     .pipe(concat('app/vendor.js'))
     .pipe(gif(!config.debug, uglify({ preserveComments: 'some' })))
