@@ -11,12 +11,21 @@ object TestDatabase {
   lazy val config = Config.load()
 
   def apply[R: AsResult](a: Database ⇒ R) = {
-    val prefix = UUID.randomUUID().toString
-    val db = Database.open(config.mongoDbServers, config.mongoDbDatabaseName, prefix)
+    val prefix = UUID.randomUUID()
+    val db = create(Some(prefix))
     try {
       AsResult.effectively(a(db))
     } finally {
-      // TODO remove collections
+      remove(prefix)
     }
+  }
+
+  def create(prefix: Option[UUID] = None): Database = {
+    val prefixStr = prefix.getOrElse(UUID.randomUUID()).toString
+    Database.open(config.mongoDbServers, config.mongoDbDatabaseName, prefixStr)
+  }
+
+  def remove(prefix: UUID): Unit = {
+    // TODO implement
   }
 }
