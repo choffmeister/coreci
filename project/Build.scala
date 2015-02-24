@@ -33,6 +33,7 @@ object Build extends sbt.Build {
       "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-M3",
       "com.typesafe.akka" %% "akka-slf4j" % "2.3.7",
       "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
+      "de.choffmeister" %% "auth-common" % "0.0.1",
       "io.spray" %% "spray-json" % "1.3.1",
       "org.kie.modules" % "org-apache-commons-compress" % "6.1.0.Final",
       "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
@@ -54,7 +55,6 @@ object Build extends sbt.Build {
   lazy val server = (project in file("coreci-server"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-      "de.choffmeister" %% "auth-common" % "0.0.1",
       "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M3",
       "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M3",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))

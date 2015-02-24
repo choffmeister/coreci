@@ -14,14 +14,15 @@ class Server extends Bootable with JsonProtocol {
   implicit val executor = system.dispatcher
   implicit val materializer = ActorFlowMaterializer()
   lazy val config = Config.load()
+  lazy val serverConfig = ServerConfig.load()
   lazy val database = Database.open(config.mongoDbServers, config.mongoDbDatabaseName)
 
   TestDataGenerator.generate(config, database)
 
   def startup(args: List[String]): Unit = {
-    val binding = Http(system).bind(interface = config.httpInterface, port = config.httpPort)
+    val binding = Http(system).bind(interface = serverConfig.httpInterface, port = serverConfig.httpPort)
     val apiRoutes = new ApiRoutes(database)
-    val staticContentRoutes = new StaticContentRoutes(config.webDir)
+    val staticContentRoutes = new StaticContentRoutes(serverConfig.webDir)
     val routes =
       pathPrefix("api")(apiRoutes.routes) ~
       pathPrefixTest(!"api")(staticContentRoutes.routes)

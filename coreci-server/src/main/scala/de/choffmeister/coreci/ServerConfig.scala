@@ -8,26 +8,18 @@ import com.typesafe.config.{Config => RawConfig, ConfigException, ConfigFactory}
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 
-case class Config(
+case class ServerConfig(
   httpInterface: String,
   httpPort: Int,
-  mongoDbServers: List[(String, Int)],
-  mongoDbDatabaseName: String,
-  passwordHashAlgorithm: String,
-  passwordHashAlgorithmConfig: List[String],
   webDir: Option[File])
 
-object Config {
-  def load(): Config = {
+object ServerConfig {
+  def load(): ServerConfig = {
     val raw = ConfigFactory.load().getConfig("coreci")
 
-    Config(
+    ServerConfig(
       httpInterface = raw.getString("http.interface"),
       httpPort = raw.getInt("http.port"),
-      mongoDbServers = (raw.getString("mongodb.host"), raw.getInt("mongodb.port")) :: Nil,
-      mongoDbDatabaseName = raw.getString("mongodb.database"),
-      passwordHashAlgorithm = raw.getString("passwords.hash-algorithm").split(":", -1).toList.head,
-      passwordHashAlgorithmConfig = raw.getString("passwords.hash-algorithm").split(":", -1).toList.tail,
       webDir = raw.getOptionalString("web-dir").map(new File(_))
     )
   }
