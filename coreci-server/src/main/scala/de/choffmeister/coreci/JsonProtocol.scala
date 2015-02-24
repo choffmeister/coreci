@@ -42,5 +42,36 @@ trait JsonProtocol extends DefaultJsonProtocol
     with DateJsonProtocol
     with BSONJsonProtocol
     with SprayJsonSupport {
+  implicit object BuildStatusFormat extends JsonFormat[BuildStatus] {
+    def write(status: BuildStatus): JsValue = status match {
+      case Pending =>
+        JsObject(
+          "type" -> JsString("pending"))
+      case Running(startedAt) =>
+        JsObject(
+          "type" -> JsString("running"),
+          "startedAt" -> BSONDateTimeFormat.write(startedAt))
+      case Succeeded(startedAt, finishedAt) =>
+        JsObject(
+          "type" ->JsString("succeeded"),
+          "startedAt" -> BSONDateTimeFormat.write(startedAt),
+          "finishedAt" -> BSONDateTimeFormat.write(finishedAt))
+      case Failed(startedAt, finishedAt, exitCode) =>
+        JsObject(
+          "type" -> JsString("pending"),
+          "startedAt" -> BSONDateTimeFormat.write(startedAt),
+          "finishedAt" -> BSONDateTimeFormat.write(finishedAt),
+          "exitCode" -> JsNumber(exitCode))
+    }
+
+    def read(value: JsValue): BuildStatus =
+      value match {
+        case _ => deserializationError(s"Build status expected. Got '$value'")
+      }
+  }
+
   implicit val userFormat = jsonFormat5(User)
+  implicit val jobFormat = jsonFormat5(Job)
+  implicit val buildFormat = jsonFormat5(Build)
+  implicit val outputFormat = jsonFormat4(Output)
 }
