@@ -23,7 +23,8 @@ import scala.concurrent._
  * @param executor The execution context
  * @param materializer The flow materializer
  */
-class Docker(host: String, port: Int)(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
+class Docker(host: String, port: Int)
+    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
   val log = LoggerFactory.getLogger(getClass)
 
   def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Future[Source[JsObject]] = {
@@ -37,5 +38,15 @@ class Docker(host: String, port: Int)(implicit system: ActorSystem, executor: Ex
       .map { res =>
         res.entity.dataBytes.map(_.utf8String).map(s => JsonParser(ParserInput(s)).asJsObject)
       }
+  }
+}
+
+object Docker {
+  def open(workers: List[(String, Int)])
+      (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer): Docker = {
+    // TODO implement some kind of load balacing
+    val host = workers.head._1
+    val port = workers.head._2
+    new Docker(host, port)
   }
 }

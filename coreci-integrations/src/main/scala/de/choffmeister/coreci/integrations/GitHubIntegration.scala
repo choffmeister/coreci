@@ -10,7 +10,7 @@ import akka.http.server.Directives._
 import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
-import de.choffmeister.coreci.Docker
+import de.choffmeister.coreci._
 import org.slf4j.LoggerFactory
 import spray.json._
 
@@ -20,7 +20,9 @@ class GitHubIntegration(implicit system: ActorSystem, executor: ExecutionContext
     extends Integration
     with DefaultJsonProtocol
     with SprayJsonSupport {
-  val log = LoggerFactory.getLogger(getClass)
+  lazy val log = LoggerFactory.getLogger(getClass)
+  lazy val config = Config.load()
+
   val name = "github"
   val routes =
     path("hook") {
@@ -29,7 +31,7 @@ class GitHubIntegration(implicit system: ActorSystem, executor: ExecutionContext
           val fullName = payload.fields("repository").asJsObject.fields("full_name").toString()
           val archiveUrlTemplate = payload.fields("repository").asJsObject.fields("archive_url").toString()
           val after = payload.fields("after").toString()
-          val docker = new Docker("localhost", 2375)
+          val docker = Docker.open(config.dockerWorkers)
           val archive = archiveTarball(archiveUrlTemplate, after)
           val stream = archive.map(docker.build(_, fullName))
 

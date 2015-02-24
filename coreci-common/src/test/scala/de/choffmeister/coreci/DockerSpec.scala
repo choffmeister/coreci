@@ -10,7 +10,7 @@ class DockerSpec extends Specification with NoTimeConversions {
   "Docker" should {
     "builds image from dockerfile" in new TestActorSystem {
       within(60.seconds) {
-        val docker = new Docker("localhost", 2375)
+        val docker = Docker.open(Config.load().dockerWorkers)
         val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
           .run("apt-get update")
           .run("apt-get install --yes nginx")
