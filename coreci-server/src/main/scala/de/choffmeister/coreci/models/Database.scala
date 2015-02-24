@@ -33,6 +33,7 @@ class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(im
   lazy val users = new UserTable(this, mongoDbDatabase(collectionNamePrefix + "users"))
   lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "userPasswords"))
   lazy val jobs = new JobTable(this, mongoDbDatabase(collectionNamePrefix + "jobs"))
+  lazy val builds = new BuildTable(this, mongoDbDatabase(collectionNamePrefix + "builds"))
 }
 
 object Database {
