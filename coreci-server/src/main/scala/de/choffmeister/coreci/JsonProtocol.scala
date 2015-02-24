@@ -58,7 +58,7 @@ trait JsonProtocol extends DefaultJsonProtocol
           "finishedAt" -> BSONDateTimeFormat.write(finishedAt))
       case Failed(startedAt, finishedAt, errorMessage) =>
         JsObject(
-          "type" -> JsString("pending"),
+          "type" -> JsString("failed"),
           "startedAt" -> BSONDateTimeFormat.write(startedAt),
           "finishedAt" -> BSONDateTimeFormat.write(finishedAt),
           "errorMessage" -> JsString(errorMessage))
