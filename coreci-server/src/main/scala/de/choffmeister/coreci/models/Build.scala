@@ -15,7 +15,7 @@ case class Failed(startedAt: BSONDateTime, finishedAt: BSONDateTime, exitCode: I
 case class Build(
   id: BSONObjectID = BSONObjectID("00" * 12),
   jobId: BSONObjectID,
-  status: BuildStatus,
+  status: BuildStatus = Pending,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
 
