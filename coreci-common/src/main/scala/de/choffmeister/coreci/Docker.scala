@@ -8,10 +8,15 @@ import akka.http.model._
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
+import de.choffmeister.coreci.models.Output
 import org.slf4j.LoggerFactory
-import spray.json.{JsObject, JsonParser, ParserInput}
+import spray.json._
 
 import scala.concurrent._
+
+sealed trait DockerStream
+case class OutputStream(content: String) extends DockerStream
+case class ErrorStream(message: String) extends DockerStream
 
 /**
  * Docker remote client
@@ -27,7 +32,7 @@ class Docker(host: String, port: Int)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
   val log = LoggerFactory.getLogger(getClass)
 
-  def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Future[Source[JsObject]] = {
+  def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Future[Source[DockerStream]] = {
     val fullName = repository + tag.map("%2F" + _).getOrElse("")
     val entity = Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
     log.debug("Building {} from Dockerfile", fullName)
@@ -36,7 +41,18 @@ class Docker(host: String, port: Int)
     Source.single(req).via(Http().outgoingConnection(host, port).flow)
       .runWith(Sink.head)
       .map { res =>
-        res.entity.dataBytes.map(_.utf8String).map(s => JsonParser(ParserInput(s)).asJsObject)
+        res.entity.dataBytes.map(_.utf8String).map { s =>
+          try {
+            JsonParser(ParserInput(s)).asJsObject match {
+              case s if s.fields.contains("stream") =>
+                OutputStream(s.fields("stream").asInstanceOf[JsString].value)
+              case s if s.fields.contains("error") =>
+                ErrorStream(s.fields("error").asInstanceOf[JsString].value)
+            }
+          } catch {
+            case ex: JsonParser.ParsingException => ErrorStream(s)
+          }
+        }
       }
   }
 }

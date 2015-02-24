@@ -20,7 +20,7 @@ class DockerSpec extends Specification with NoTimeConversions {
           .expose(80)
           .expose(443)
         val future = docker.build(dockerfile.asTar, "coreci/nginx").flatMap { messages =>
-          messages.runFold(List.empty[JsObject])(_ :+ _)
+          messages.runFold(List.empty[DockerStream])(_ :+ _)
         }
 
         await(future)

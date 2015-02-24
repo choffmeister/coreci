@@ -9,7 +9,7 @@ import spray.json.JsString
 
 import scala.concurrent._
 
-class Builder(db: Database, dockerHost: String, dockerPort: Int)
+class Builder(db: Database)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
   val config = Config.load()
   val docker = Docker.open(config.dockerWorkers)
@@ -19,12 +19,10 @@ class Builder(db: Database, dockerHost: String, dockerPort: Int)
       running <- db.builds.update(pending.copy(status = Running(now)))
       stream <- docker.build(dockerfile.asTar, running.id.stringify)
       finished <- withIndex(stream).mapAsync[Either[String, Output]] {
-        case (i, s) if s.fields.contains("stream") =>
-          val content = s.fields("stream").asInstanceOf[JsString].value
+        case (i, OutputStream(content)) =>
           db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(Right.apply)
-        case (i, s) if s.fields.contains("error") =>
-          val error = s.fields("error").asInstanceOf[JsString].value
-          Future(Left(error))
+        case (i, ErrorStream(message)) =>
+          Future(Left(message))
       }.runFold(running) {
         case (build@Build(_, _, Running(startedAt), _, _), Left(errorMessage)) =>
           build.copy(status = Failed(startedAt, now, errorMessage))

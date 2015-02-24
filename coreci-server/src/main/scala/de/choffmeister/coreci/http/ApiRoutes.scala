@@ -12,14 +12,31 @@ import spray.json.RootJsonFormat
 import scala.concurrent.ExecutionContext
 
 class ApiRoutes(database: Database)(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends JsonProtocol {
-  val github = new GitHubIntegration()
-  val integrations = github :: Nil
+  lazy val builder = new Builder(database)
+  lazy val github = new GitHubIntegration()
+  lazy val integrations = github :: Nil
 
   lazy val routes =
-    viewable("users", database.users) ~
-    viewable("jobs", database.jobs) ~
     viewable("builds", database.builds) ~
-    viewable("outputs", database.outputs) ~
+    pathPrefix("builds") {
+      pathEnd {
+        post {
+          entity(as[String]) { raw =>
+            complete {
+              val dockerfile = Dockerfile.parse(raw)
+              val pending = database.builds.insert(Build(jobId = None))
+              pending.flatMap(p => builder.run(p, dockerfile))
+              pending
+            }
+          }
+        }
+      } ~
+      path(BSONObjectIDSegment / "output") { buildId =>
+        get {
+          complete(database.outputs.findByBuild(buildId).map(_.map(_.content).mkString))
+        }
+      }
+    } ~
     pathPrefix("integrations") {
       pathPrefix(Segment) { name =>
         integrations.find(inte => inte.name == name) match {
