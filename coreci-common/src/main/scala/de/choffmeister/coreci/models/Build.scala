@@ -10,11 +10,11 @@ sealed trait BuildStatus
 case object Pending extends BuildStatus
 case class Running(startedAt: BSONDateTime) extends BuildStatus
 case class Succeeded(startedAt: BSONDateTime, finishedAt: BSONDateTime) extends BuildStatus
-case class Failed(startedAt: BSONDateTime, finishedAt: BSONDateTime, exitCode: Int) extends BuildStatus
+case class Failed(startedAt: BSONDateTime, finishedAt: BSONDateTime, errorMessage: String) extends BuildStatus
 
 case class Build(
   id: BSONObjectID = BSONObjectID("00" * 12),
-  jobId: BSONObjectID,
+  jobId: Option[BSONObjectID],
   status: BuildStatus = Pending,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
@@ -53,7 +53,7 @@ object BuildJSONFormat {
         Failed(
           doc.getAs[BSONDateTime]("startedAt").get,
           doc.getAs[BSONDateTime]("finishedAt").get,
-          doc.getAs[Int]("exitCode").get)
+          doc.getAs[String]("errorMessage").get)
       case _ =>
         ???
     }
@@ -73,19 +73,19 @@ object BuildJSONFormat {
           "type" -> "succeeded",
           "startedAt" -> startedAt,
           "finishedAt" -> finishedAt)
-      case Failed(startedAt, finishedAt, exitCode) =>
+      case Failed(startedAt, finishedAt, errorMessage) =>
         BSONDocument(
           "type" -> "failed",
           "startedAt" -> startedAt,
           "finishedAt" -> finishedAt,
-          "exitCode" -> exitCode)
+          "errorMessage" -> errorMessage)
     }
   }
 
   implicit object Reader extends BSONDocumentReader[Build] {
     def read(doc: BSONDocument): Build = Build(
       id = doc.getAs[BSONObjectID]("_id").get,
-      jobId = doc.getAs[BSONObjectID]("jobId").get,
+      jobId = doc.getAs[BSONObjectID]("jobId"),
       status = doc.getAs[BuildStatus]("status").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get

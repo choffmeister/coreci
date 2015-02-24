@@ -56,12 +56,12 @@ trait JsonProtocol extends DefaultJsonProtocol
           "type" ->JsString("succeeded"),
           "startedAt" -> BSONDateTimeFormat.write(startedAt),
           "finishedAt" -> BSONDateTimeFormat.write(finishedAt))
-      case Failed(startedAt, finishedAt, exitCode) =>
+      case Failed(startedAt, finishedAt, errorMessage) =>
         JsObject(
           "type" -> JsString("pending"),
           "startedAt" -> BSONDateTimeFormat.write(startedAt),
           "finishedAt" -> BSONDateTimeFormat.write(finishedAt),
-          "exitCode" -> JsNumber(exitCode))
+          "errorMessage" -> JsString(errorMessage))
     }
 
     def read(value: JsValue): BuildStatus =
@@ -73,5 +73,5 @@ trait JsonProtocol extends DefaultJsonProtocol
   implicit val userFormat = jsonFormat5(User)
   implicit val jobFormat = jsonFormat5(Job)
   implicit val buildFormat = jsonFormat5(Build)
-  implicit val outputFormat = jsonFormat4(Output)
+  implicit val outputFormat = jsonFormat5(Output)
 }
