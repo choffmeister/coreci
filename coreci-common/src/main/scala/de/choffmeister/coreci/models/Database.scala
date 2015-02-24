@@ -3,6 +3,7 @@ package de.choffmeister.coreci.models
 import reactivemongo.api._
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
+import reactivemongo.core.commands.Drop
 
 import scala.concurrent._
 
@@ -35,6 +36,15 @@ class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(im
   lazy val jobs = new JobTable(this, mongoDbDatabase(collectionNamePrefix + "jobs"))
   lazy val builds = new BuildTable(this, mongoDbDatabase(collectionNamePrefix + "builds"))
   lazy val outputs = new OutputTable(this, mongoDbDatabase(collectionNamePrefix + "outputs"))
+
+  def clear(): Future[Unit] =
+    Future.sequence(Seq(
+      mongoDbDatabase.command(new Drop(collectionNamePrefix + "users")),
+      mongoDbDatabase.command(new Drop(collectionNamePrefix + "userPasswords")),
+      mongoDbDatabase.command(new Drop(collectionNamePrefix + "jobs")),
+      mongoDbDatabase.command(new Drop(collectionNamePrefix + "builds")),
+      mongoDbDatabase.command(new Drop(collectionNamePrefix + "outputs"))
+    )).map(_ => ())
 }
 
 object Database {
