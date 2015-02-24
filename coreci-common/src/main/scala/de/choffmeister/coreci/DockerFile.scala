@@ -16,6 +16,9 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
       case None => copy(instructions = instructions :+ DockerfileInstruction("FROM", repository))
     }
 
+  def comment(text: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("#", text))
+
   def run(command: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("RUN", command))
 
@@ -51,4 +54,33 @@ object Dockerfile {
   def empty: Dockerfile = Dockerfile(Seq.empty)
 
   def from(repository: String, tag: Option[String]): Dockerfile = Dockerfile.empty.from(repository, tag)
+
+  def parse(raw: String): Dockerfile = {
+    def dropFirst(s: String) = s.substring(1)
+    def dropLast(s: String) = s.substring(0, s.length - 1)
+
+    val lines = raw.split("\n", -1).map(_.trim).foldLeft((List.empty[String], List.empty[String])) {
+      case ((list, Nil), line) if line.endsWith("\\") =>
+        (list, dropLast(line).trim :: Nil)
+      case ((list, prelines), line) if line.endsWith("\\") =>
+        (list, prelines :+ dropLast(line).trim)
+      case ((list, Nil), line) =>
+        (list :+ line.trim, Nil)
+      case ((list, prelines), line) =>
+        (list :+ (prelines :+ line.trim).mkString(" "), Nil)
+    } match {
+      case (list, Nil) => list
+      case (list, lastline) => list :+ lastline.mkString(" ")
+    }
+
+    val instructions = lines.filter(_.length > 0).map {
+      case comment if comment.startsWith("#") =>
+        DockerfileInstruction("#", dropFirst(comment).trim)
+      case instruction =>
+        val inst = instruction.split(" ", 2).head.toUpperCase
+        val args = instruction.split(" ", 2).drop(1).headOption
+        DockerfileInstruction(inst, args.map(_.trim).getOrElse(""))
+    }
+    Dockerfile(instructions)
+  }
 }
