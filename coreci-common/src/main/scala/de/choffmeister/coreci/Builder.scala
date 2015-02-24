@@ -14,9 +14,8 @@ class Builder(db: Database, dockerHost: String, dockerPort: Int)
   val config = Config.load()
   val docker = Docker.open(config.dockerWorkers)
 
-  def run(dockerfile: Dockerfile, job: Option[Job]): Future[Build] =
+  def run(pending: Build, dockerfile: Dockerfile): Future[Build] =
     for {
-      pending <- db.builds.insert(Build(jobId = job.map(_.id)))
       running <- db.builds.update(pending.copy(status = Running(now)))
       stream <- docker.build(dockerfile.asTar, running.id.stringify)
       finished <- withIndex(stream).mapAsync[Either[String, Output]] {
