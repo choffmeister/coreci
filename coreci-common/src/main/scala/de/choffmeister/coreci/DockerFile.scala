@@ -56,8 +56,8 @@ object Dockerfile {
   def from(repository: String, tag: Option[String]): Dockerfile = Dockerfile.empty.from(repository, tag)
 
   def parse(raw: String): Dockerfile = {
-    def dropFirst(s: String) = s.substring(1)
-    def dropLast(s: String) = s.substring(0, s.length - 1)
+    def dropFirst(s: String): String = s.substring(1)
+    def dropLast(s: String): String = s.substring(0, s.length - 1)
 
     val lines = raw.split("\n", -1).map(_.trim).foldLeft((List.empty[String], List.empty[String])) {
       case ((list, Nil), line) if line.endsWith("\\") =>
