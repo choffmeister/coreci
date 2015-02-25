@@ -11,6 +11,7 @@ html(ng-app="app")
     script(type="text/javascript", src="/app/templates.js")
     base(href="/")
   body
+    include partials/flashmessages.jade
     div.container
       header: include partials/header
       div(ng-view)

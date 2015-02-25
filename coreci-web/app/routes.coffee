@@ -10,9 +10,11 @@ angular.module("app").config(["$injector", "$routeProvider", "$locationProvider"
             when true then $q.all($injector.get("#{controller}$data")($routeParams))
             else undefined
         ]
-    $routeProvider.when url, options
+    $routeProvider.when url, _.extend({}, options, opts)
 
   route("/", "/controllers/home", "homeController")
+  route("/login", "/controllers/login", "loginController")
+  route("/logout", undefined, undefined, { resolve: { logout: ["authService", (authService) -> authService.logout()] }, redirectTo: "/" })
   route("/builds/create", "/controllers/create", "createController")
   route("/builds/:buildId", "/controllers/build", "buildController")
 

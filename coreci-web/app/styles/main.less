@@ -13,6 +13,23 @@ footer {
   border-top: @header-footer-border;
 }
 
+#flash-messages {
+  position: fixed;
+  left: 6px;
+  bottom: 6px;
+  z-index: 10000;
+
+  .flash-message {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    margin-top: 6px;
+    cursor: pointer;
+  }
+}
+
 #version {
   position: fixed;
   right: 4px;
