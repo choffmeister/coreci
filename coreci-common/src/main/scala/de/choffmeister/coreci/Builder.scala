@@ -14,9 +14,10 @@ class Builder(db: Database)
   val config = Config.load()
   val docker = Docker.open(config.dockerWorkers)
 
-  def run(pending: Build, dockerfile: Dockerfile): Future[Build] =
-    for {
-      running <- db.builds.update(pending.copy(status = Running(now)))
+  def run(pending: Build, dockerfile: Dockerfile): Future[Build] = {
+    val startedAt = now
+    val finished = for {
+      running <- db.builds.update(pending.copy(status = Running(startedAt)))
       stream <- docker.build(dockerfile.asTar, running.id.stringify)
       finished <- withIndex(stream).mapAsync[Either[String, Output]] {
         case (i, OutputStream(content)) =>
@@ -36,6 +37,13 @@ class Builder(db: Database)
       }
       saved <- db.builds.update(finished)
     } yield saved
+
+    finished.recoverWith {
+      case err =>
+        val message = Option(err.getMessage).getOrElse("Unknown error")
+        db.builds.update(pending.copy(status = Failed(startedAt, now, message)))
+    }
+  }
 
   private def withIndex[T](source: Source[T]): Source[(Long, T)] = {
     var index = 0L
