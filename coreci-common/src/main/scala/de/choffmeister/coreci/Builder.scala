@@ -20,6 +20,8 @@ class Builder(db: Database)
       running <- db.builds.update(pending.copy(status = Running(startedAt)))
       stream <- docker.build(dockerfile.asTar, running.id.stringify)
       finished <- withIndex(stream).mapAsync[Either[String, Output]] {
+        case (i, StatusStream(content)) =>
+          db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(Right.apply)
         case (i, OutputStream(content)) =>
           db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(Right.apply)
         case (i, ErrorStream(message)) =>

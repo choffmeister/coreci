@@ -15,6 +15,7 @@ import spray.json._
 import scala.concurrent._
 
 sealed trait DockerStream
+case class StatusStream(message: String) extends DockerStream
 case class OutputStream(content: String) extends DockerStream
 case class ErrorStream(message: String) extends DockerStream
 
@@ -44,6 +45,8 @@ class Docker(host: String, port: Int)
         res.entity.dataBytes.map(_.utf8String).map { s =>
           try {
             JsonParser(ParserInput(s)).asJsObject match {
+              case s if s.fields.contains("status") =>
+                StatusStream(s.fields("status").asInstanceOf[JsString].value)
               case s if s.fields.contains("stream") =>
                 OutputStream(s.fields("stream").asInstanceOf[JsString].value)
               case s if s.fields.contains("error") =>
