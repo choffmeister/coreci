@@ -3,6 +3,8 @@ angular.module("app").service("restService", ["$http", ($http) ->
     $http.get("/api/jobs")
   showJob: (jobId) ->
     $http.get("/api/jobs/#{jobId}")
+  runJob: (jobId) ->
+    $http.post("/api/jobs/#{jobId}/run")
   listBuildsAll: () ->
     $http.get("/api/builds")
   listBuilds: (jobId) ->
