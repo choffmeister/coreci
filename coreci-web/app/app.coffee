@@ -9,3 +9,12 @@ angular.module("app").config(["$httpProvider", ($httpProvider) ->
 angular.module("app").run(["authService", (authService) ->
   authService.initSession()
 ])
+
+# close bootstrap navigation menu on route change
+angular.module("app").run(["$rootScope", ($rootScope) ->
+  window.setTimeout(() ->
+    $rootScope.$on("$routeChangeStart", () ->
+      $("button.navbar-toggle:visible:not(.collapsed)").click()
+    )
+  , 0)
+])

@@ -14,7 +14,7 @@ case class Failed(startedAt: BSONDateTime, finishedAt: BSONDateTime, errorMessag
 
 case class Build(
   id: BSONObjectID = BSONObjectID("00" * 12),
-  jobId: Option[BSONObjectID],
+  jobId: BSONObjectID,
   status: BuildStatus = Pending,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
@@ -34,7 +34,10 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
     Future.successful(obj.copy(updatedAt = now))
   }
 
-  collection.indexesManager.ensure(Index(List("jobId" -> IndexType.Ascending)))
+  def findByJob(jobId: BSONObjectID): Future[List[Build]] = query(BSONDocument("jobId" -> jobId))
+
+  collection.indexesManager.ensure(Index(List("updatedAt" -> IndexType.Descending)))
+  collection.indexesManager.ensure(Index(List("jobId" -> IndexType.Ascending, "updatedAt" -> IndexType.Descending)))
 }
 
 object BuildJSONFormat {
@@ -85,7 +88,7 @@ object BuildJSONFormat {
   implicit object Reader extends BSONDocumentReader[Build] {
     def read(doc: BSONDocument): Build = Build(
       id = doc.getAs[BSONObjectID]("_id").get,
-      jobId = doc.getAs[BSONObjectID]("jobId"),
+      jobId = doc.getAs[BSONObjectID]("jobId").get,
       status = doc.getAs[BuildStatus]("status").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get

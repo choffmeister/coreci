@@ -3,6 +3,7 @@ package de.choffmeister.coreci
 import de.choffmeister.coreci.models._
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
+import reactivemongo.bson.BSONObjectID
 
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -15,7 +16,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
           .run("echo hello world")
 
-        val pending = await(db.builds.insert(Build(jobId = None)))
+        val pending = await(db.builds.insert(Build(jobId = BSONObjectID.generate)))
         val finished = await(builder.run(pending, dockerfile))
         finished.status must beAnInstanceOf[Succeeded]
       }
@@ -27,7 +28,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
           .run("unknowncommand")
 
-        val pending = await(db.builds.insert(Build(jobId = None)))
+        val pending = await(db.builds.insert(Build(jobId = BSONObjectID.generate)))
         val finished = await(builder.run(pending, dockerfile))
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("unknowncommand")
@@ -43,7 +44,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val builder = new Builder(db)
         val dockerfile = Dockerfile.parse("{}")
 
-        val pending = await(db.builds.insert(Build(jobId = None)))
+        val pending = await(db.builds.insert(Build(jobId = BSONObjectID.generate)))
         val finished = await(builder.run(pending, dockerfile))
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("cannot continue")
