@@ -15,8 +15,9 @@ angular.module("app").config(["$injector", "$routeProvider", "$locationProvider"
   route("/", "/controllers/home", "homeController")
   route("/login", "/controllers/login", "loginController")
   route("/logout", undefined, undefined, { resolve: { logout: ["authService", (authService) -> authService.logout()] }, redirectTo: "/" })
-  route("/builds/create", "/controllers/create", "createController")
-  route("/builds/:buildId", "/controllers/build", "buildController")
+  route("/jobs", "/controllers/jobs", "jobsController")
+  route("/jobs/:jobId", "/controllers/job", "jobController")
+  route("/jobs/:jobId/builds/:buildId", "/controllers/build", "buildController")
 
   $routeProvider.otherwise({ templateUrl: "/notfound.html" })
   $locationProvider.html5Mode(true)

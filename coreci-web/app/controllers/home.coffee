@@ -3,5 +3,5 @@ angular.module("app").controller("homeController", ["$scope", "$data", ($scope, 
 ])
 
 angular.module("app").factory("homeController$data", ["restService", (restService) -> ($routeParams) ->
-  builds: restService.listBuilds()
+  builds: restService.listBuildsAll()
 ])

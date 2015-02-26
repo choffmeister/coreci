@@ -39,7 +39,7 @@ object TestDataGenerator {
     description = s"This is Job #$i")
 
   private def build(job: Job, i: Int) = Build(
-    jobId = Some(job.id),
+    jobId = job.id,
     status = Succeeded(now, now))
 
   private def output(build: Build, i: Int) = Output(

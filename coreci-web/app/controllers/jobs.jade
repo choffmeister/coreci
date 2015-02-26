@@ -1,0 +1,3 @@
+ul.list-group
+  li.list-group-item(ng-repeat="job in jobs")
+    a(href="/jobs/{{job.id}}") {{job.description}}

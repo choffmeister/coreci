@@ -1,10 +1,14 @@
 angular.module("app").service("restService", ["$http", ($http) ->
-  listBuilds: () ->
+  listJobs: () ->
+    $http.get("/api/jobs")
+  showJob: (jobId) ->
+    $http.get("/api/jobs/#{jobId}")
+  listBuildsAll: () ->
     $http.get("/api/builds")
-  showBuild: (id) ->
-    $http.get("/api/builds/#{id}")
-  showBuildOutput: (id) ->
-    $http.get("/api/builds/#{id}/output")
-  createBuild: (dockerfile) ->
-    $http.post("/api/builds", dockerfile)
+  listBuilds: (jobId) ->
+    $http.get("/api/jobs/#{jobId}/builds")
+  showBuild: (jobId, buildId) ->
+    $http.get("/api/jobs/#{jobId}/builds/#{buildId}")
+  showBuildOutput: (jobId, buildId) ->
+    $http.get("/api/jobs/#{jobId}/builds/#{buildId}/output")
 ])
