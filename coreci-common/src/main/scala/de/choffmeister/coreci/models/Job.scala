@@ -9,7 +9,9 @@ import scala.concurrent._
 case class Job(
   id: BSONObjectID = BSONObjectID("00" * 12),
   userId: BSONObjectID,
+  displayName: String,
   description: String,
+  dockerfile: String,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
 
@@ -36,7 +38,9 @@ object JobBSONFormat {
     def read(doc: BSONDocument): Job = Job(
       id = doc.getAs[BSONObjectID]("_id").get,
       userId = doc.getAs[BSONObjectID]("userId").get,
+      displayName = doc.getAs[String]("displayName").get,
       description = doc.getAs[String]("description").get,
+      dockerfile = doc.getAs[String]("dockerfile").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
     )
@@ -46,7 +50,9 @@ object JobBSONFormat {
     def write(obj: Job): BSONDocument = BSONDocument(
       "_id" -> obj.id,
       "userId" -> obj.userId,
+      "displayName" -> obj.displayName,
       "description" -> obj.description,
+      "dockerfile" -> obj.dockerfile,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt
     )

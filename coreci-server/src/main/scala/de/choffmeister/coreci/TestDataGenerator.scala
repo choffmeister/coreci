@@ -36,7 +36,9 @@ object TestDataGenerator {
 
   private def job(user: User, i: Int) = Job(
     userId = user.id,
-    description = s"This is Job #$i")
+    displayName = s"job$i",
+    description = s"This is Job #$i",
+    dockerfile = Dockerfile.from("ubuntu", Some("14.04")).run(s"echo this is job #$i").asString)
 
   private def build(job: Job, i: Int) = Build(
     jobId = job.id,

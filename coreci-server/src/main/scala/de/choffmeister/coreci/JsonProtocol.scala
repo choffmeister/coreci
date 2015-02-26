@@ -71,7 +71,7 @@ trait JsonProtocol extends DefaultJsonProtocol
   }
 
   implicit val userFormat = jsonFormat5(User)
-  implicit val jobFormat = jsonFormat5(Job)
+  implicit val jobFormat = jsonFormat7(Job)
   implicit val buildFormat = jsonFormat5(Build)
   implicit val outputFormat = jsonFormat5(Output)
 }

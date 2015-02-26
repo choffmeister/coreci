@@ -16,7 +16,7 @@ class DatabaseSpec extends Specification with NoTimeConversions{
     }
 
     entity("jobs", _.jobs) {
-      case Left(i) => Job(userId = BSONObjectID.generate, description = s"job$i")
+      case Left(i) => Job(userId = BSONObjectID.generate, displayName = s"job$i", description = s"This is job$i", dockerfile = "")
       case Right(j) => j.copy(description = j.description + "-modified")
     }
 
