@@ -12,8 +12,8 @@ html(ng-app="app")
     base(href="/")
   body
     include partials/flashmessages.jade
+    header: include partials/header
     div.container
-      header: include partials/header
       div(ng-view)
-      footer: include partials/footer
-      div#version %%version%%
+    footer: include partials/footer
+    div#version %%version%%
