@@ -25,9 +25,17 @@ var Build = React.createClass({
       console = <span>No console output</span>;
     }
 
+    var error;
+    if (build.status.type == 'failed') {
+      error = (
+        <pre>{"ERROR\n\n" + build.status.errorMessage}</pre>
+      );
+    }
+
     return (
       <div>
         <h1>Build {build.id}</h1>
+        {error}
         <dl>
           <dt>Status</dt>
           <dd><BuildStatus build={build}/></dd>

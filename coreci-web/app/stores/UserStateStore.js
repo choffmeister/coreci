@@ -12,10 +12,14 @@ var UserStateStore = Reflux.createStore({
   tokenRaw: null,
   token: null,
   username: null,
+  notifications: [],
+  nextNotificationId: 0,
 
   init: function () {
     this.listenTo(Actions.Login, this.login);
     this.listenTo(Actions.Logout, this.logout);
+    this.listenTo(Actions.NotificationAdd, this.notificationAdd);
+    this.listenTo(Actions.NotificationDrop, this.notificationDrop);
 
     if (window.localStorage.getItem('token')) {
       try {
@@ -42,7 +46,6 @@ var UserStateStore = Reflux.createStore({
   },
 
   login: function(username, password) {
-    console.log('login', username, password);
     var xhr = new XMLHttpRequest();
     var done = false;
 
@@ -54,8 +57,10 @@ var UserStateStore = Reflux.createStore({
             try {
               var response = JSON.parse(xhr.responseText);
               this.setToken(response.access_token);
+              this.notifications = [];
               this.trigger();
               Actions.Login.completed(this.username);
+              Actions.NotificationAdd('Welcome, ' + this.username + '!');
             } catch (ex) {
               Actions.Login.failed(ex);
             }
@@ -79,7 +84,27 @@ var UserStateStore = Reflux.createStore({
 
   logout: function () {
     this.unsetToken();
+    this.notifications = [];
     this.trigger();
+    Actions.NotificationAdd('Goodbye!');
+  },
+
+  notificationAdd: function (text) {
+    this.notifications.push({
+      id: this.nextNotificationId++,
+      text: text
+    });
+    this.trigger();
+  },
+
+  notificationDrop: function (id) {
+    for (var i = 0, l = this.notifications.length; i < l; i++) {
+      if (this.notifications[i].id == id) {
+        this.notifications.splice(i, 1);
+        this.trigger();
+        return;
+      }
+    }
   }
 });
 

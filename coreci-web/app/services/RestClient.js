@@ -1,4 +1,5 @@
-var UserStateStore = require('../stores/UserStateStore');
+var Actions = require('../stores/Actions'),
+    UserStateStore = require('../stores/UserStateStore');
 
 var RestClient = {};
 
@@ -22,6 +23,7 @@ RestClient.request = function (method, url, payload, parseJson) {
             }
             break;
           default:
+            Actions.NotificationAdd(xhr.statusText);
             reject(new Error(xhr.statusText));
             break;
         }
