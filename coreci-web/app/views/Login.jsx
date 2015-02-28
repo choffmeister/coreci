@@ -1,6 +1,6 @@
 var React = require('react'),
     ReactRouter = require('react-router'),
-    Actions = require('../stores/Actions'),
+    AccessToken = require('../services/AccessToken'),
     Callout = require('../components/Callout.jsx');
 
 var Login = React.createClass({
@@ -23,27 +23,16 @@ var Login = React.createClass({
     event.preventDefault();
     this.setState({ busy: true });
 
-    Actions.Login.triggerPromise(this.state.username, this.state.password)
-      .then(user => {
-        if (user) {
-          this.transitionTo('app');
-        } else {
-          this.reset();
-          this.setState({
-            message: {
-              type: 'warning',
-              text: 'The credentials are invalid.'
-            }
-          });
-        }
+    AccessToken.create(this.state.username, this.state.password)
+      .then(token => {
+        this.transitionTo('app');
       })
-      .catch(error => {
-        console.error('err', error);
+      .catch(err => {
         this.reset();
         this.setState({
           message: {
-            type: 'error',
-            text: 'There was an unknown error.'
+            type: err === null ? 'warning' : 'error',
+            text: err === null ? 'The credentials are invalid.' : 'There was an unknown error.'
           }
         });
       });

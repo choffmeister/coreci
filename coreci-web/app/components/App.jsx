@@ -1,7 +1,6 @@
 var React = require('react'),
     ReactRouter = require('react-router'),
-    Navigation = require('./Navigation.jsx'),
-    Notifications = require('./Notifications.jsx');
+    Navigation = require('./Navigation.jsx');
 
 var App = React.createClass({
   render: function () {
@@ -15,7 +14,6 @@ var App = React.createClass({
         <div className="container">
           &copy; 2015 Christian Hoffmeister
         </div>
-        <Notifications/>
       </div>
     );
   }

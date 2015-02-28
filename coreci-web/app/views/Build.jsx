@@ -8,7 +8,7 @@ var Build = React.createClass({
     fetchData: function (params) {
       return {
         build: RestClient.get('/api/jobs/' + params.jobId + '/builds/' + params.buildId),
-        output: RestClient.request('GET', '/api/jobs/' + params.jobId + '/builds/' + params.buildId + '/output', null, false)
+        output: RestClient.get('/api/jobs/' + params.jobId + '/builds/' + params.buildId + '/output', true)
       };
     }
   },

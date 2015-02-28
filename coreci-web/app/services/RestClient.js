@@ -1,56 +1,61 @@
-var Actions = require('../stores/Actions'),
-    UserStateStore = require('../stores/UserStateStore');
+var AccessToken = require('./AccessToken');
 
 var RestClient = {};
 
-RestClient.request = function (method, url, payload, parseJson) {
-  if (parseJson === undefined) parseJson = true;
+var request = function (method, url, payload, raw, depth) {
+  if (depth === undefined) depth = 0;
 
   return new Promise(function (resolve, reject) {
     var xhr = new XMLHttpRequest();
-    var done = false;
-
     xhr.onreadystatechange = function () {
-      if (xhr.readyState == 4 && !done) {
-        done = true;
+      if (xhr.readyState == 4) {
         switch (xhr.status) {
           case 200:
             try {
-              result = parseJson ? JSON.parse(xhr.responseText) : xhr.responseText;
+              result = raw === true ? xhr.responseText : JSON.parse(xhr.responseText);
               resolve(result);
             } catch (ex) {
               reject(ex);
             }
             break;
+          case 401:
+            var authHeader = xhr.getResponseHeader('www-authenticate');
+            if (authHeader && authHeader.toLowerCase().substring(0, 7) == 'bearer ' && authHeader.indexOf('expired') > 0 && depth < 1) {
+              AccessToken.renew()
+                .then(token => request(method, url, payload, raw, depth + 1).then(res => resolve(res)).catch(err => reject(err)))
+                .catch(err => reject(err))
+            } else {
+              reject(new Error(xhr.statusText));
+            }
+            break;
           default:
-            Actions.NotificationAdd(xhr.statusText);
             reject(new Error(xhr.statusText));
             break;
         }
       }
     };
 
-    xhr.open(method.toUpperCase(), url, true);
-    if (UserStateStore.tokenRaw) xhr.setRequestHeader('Authorization', 'Bearer ' + UserStateStore.tokenRaw);
+    xhr.open(method, url, true);
+    if (AccessToken.current()) xhr.setRequestHeader('Authorization', 'Bearer ' + AccessToken.current());
     xhr.setRequestHeader('X-WWW-Authenticate-Filter', 'Bearer');
     xhr.send(payload);
   });
 };
 
-RestClient.get = function(url) {
-  return RestClient.request('GET', url, null);
+RestClient.get = function(url, raw) {
+  return request('GET', url, null, raw);
 };
 
-RestClient.post = function(url, payload) {
-  return RestClient.request('POST', url, payload);
+RestClient.post = function(url, payload, raw) {
+  return request('POST', url, payload, raw);
 };
 
-RestClient.put = function(url, payload) {
-  return RestClient.request('PUT', url, payload);
+RestClient.put = function(url, payload, raw) {
+  return request('PUT', url, payload, raw);
 };
 
-RestClient.del = function(url) {
-  return RestClient.request('DELETE', url);
+RestClient.del = function(url, raw) {
+  return request('DELETE', url, raw);
 };
 
 module.exports = RestClient;
