@@ -5,6 +5,7 @@ var React = require('react'),
     RestClient = require('./services/RestClient');
 
 var App = require('./components/App.jsx'),
+    Login = require('./views/Login.jsx'),
     Jobs = require('./views/Jobs.jsx'),
     Job = require('./views/Job.jsx'),
     Builds = require('./views/Builds.jsx'),
@@ -13,6 +14,7 @@ var App = require('./components/App.jsx'),
 
 var routes = (
   <Route name="app" handler={App} path="/">
+    <Route name="login" handler={Login} path="/login"/>
     <Route name="jobs-list" handler={Jobs} path="/jobs"/>
     <Route name="jobs-show" handler={Job} path="/jobs/:jobId"/>
     <Route name="builds-list" handler={Builds} path="/builds"/>

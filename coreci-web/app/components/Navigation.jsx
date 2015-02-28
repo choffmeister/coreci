@@ -21,36 +21,26 @@ var Actions = require('../stores/Actions'),
 var Navigation = React.createClass({
   mixins: [Reflux.ListenerMixin],
 
-  getInitialState: function () {
-    return {
-      user: UserStateStore.user
-    }
+  componentWillMount : function () {
+    this.onUserStateChanged();
   },
 
   componentDidMount: function () {
     this.listenTo(UserStateStore, this.onUserStateChanged);
   },
 
-  login: function () {
-    Actions.Login('user1');
-  },
-
-  logout: function () {
-    Actions.Logout();
-  },
-
-  onUserStateChanged: function (user) {
+  onUserStateChanged: function () {
     this.setState({
-      user: user
+      username: UserStateStore.username
     });
   },
 
   render: function () {
     var loginLogout;
-    if (!this.state.user) {
-      loginLogout = <NavItem onClick={this.login}>Login</NavItem>
+    if (!this.state.username) {
+      loginLogout = <NavItemLink to="login">Login</NavItemLink>
     } else {
-      loginLogout = <NavItem onClick={this.logout}>Logout ({this.state.user})</NavItem>
+      loginLogout = <NavItem onClick={Actions.Logout}>Logout ({this.state.username})</NavItem>
     }
     return (
       <Navbar brand={this.props.brand}>

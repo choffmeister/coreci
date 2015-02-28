@@ -1,8 +1,8 @@
 var Reflux = require('reflux');
 
-var Actions = Reflux.createActions([
-  'Login',
-  'Logout'
-]);
+Actions = {
+  Login: Reflux.createAction({ asyncResult: true }),
+  Logout: Reflux.createAction()
+};
 
 module.exports = Actions;

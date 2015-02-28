@@ -1,3 +1,5 @@
+var UserStateStore = require('../stores/UserStateStore');
+
 var RestClient = {};
 
 RestClient.request = function (method, url, payload, parseJson) {
@@ -5,9 +7,11 @@ RestClient.request = function (method, url, payload, parseJson) {
 
   return new Promise(function (resolve, reject) {
     var xhr = new XMLHttpRequest();
+    var done = false;
 
     xhr.onreadystatechange = function () {
-      if (xhr.readyState == 4) {
+      if (xhr.readyState == 4 && !done) {
+        done = true;
         switch (xhr.status) {
           case 200:
             try {
@@ -25,6 +29,8 @@ RestClient.request = function (method, url, payload, parseJson) {
     };
 
     xhr.open(method.toUpperCase(), url, true);
+    if (UserStateStore.tokenRaw) xhr.setRequestHeader('Authorization', 'Bearer ' + UserStateStore.tokenRaw);
+    xhr.setRequestHeader('X-WWW-Authenticate-Filter', 'Bearer');
     xhr.send(payload);
   });
 };
