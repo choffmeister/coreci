@@ -1,6 +1,2 @@
 # Simple Build Tool
 target/
-
-# NPM and Bower
-bower_components/
-node_modules/
