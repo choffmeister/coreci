@@ -1,8 +1,7 @@
 var React = require('react'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx'),
-    Console = require('../components/Console.jsx'),
-    BuildStatus = require('../components/BuildStatus.jsx');
+    Console = require('../components/Console.jsx');
 
 var Build = React.createClass({
   statics: {
@@ -38,7 +37,7 @@ var Build = React.createClass({
         {error}
         <dl>
           <dt>Status</dt>
-          <dd><BuildStatus build={build}/></dd>
+          <dd><span className={'build-' + build.status.type}/></dd>
           <dt>Created at</dt>
           <dd><DateTime value={build.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>

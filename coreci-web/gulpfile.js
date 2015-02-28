@@ -73,6 +73,12 @@ gulp.task('javascript', function () {
   }
 });
 
+gulp.task('assets-bootstrap-font', function () {
+  return gulp.src('./node_modules/bootstrap/fonts/*.*')
+    .pipe(gulp.dest(config.dest('app/fonts')));
+});
+gulp.task('assets', ['assets-bootstrap-font']);
+
 gulp.task('connect', ['build'], function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
@@ -88,6 +94,6 @@ gulp.task('watch', ['build'], function () {
   gulp.watch('./app/**/*.{js,jsx}', ['javascript']);
 });
 
-gulp.task('build', ['html', 'css', 'javascript']);
+gulp.task('build', ['html', 'css', 'javascript', 'assets']);
 gulp.task('server', ['connect', 'watch']);
 gulp.task('default', ['server']);
