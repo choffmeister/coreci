@@ -1,18 +1,24 @@
 var React = require('react'),
     ReactRouter = require('react-router'),
     Route = ReactRouter.Route,
-    DefaultRoute = ReactRouter.DefaultRoute,
+    Redirect = ReactRouter.Redirect,
     RestClient = require('./services/RestClient');
 
 var App = require('./components/App.jsx'),
-    Home = require('./components/Home.jsx'),
-    About = require('./components/About.jsx');
+    Jobs = require('./views/Jobs.jsx'),
+    Job = require('./views/Job.jsx'),
+    Builds = require('./views/Builds.jsx'),
+    Build = require('./views/Build.jsx'),
+    About = require('./views/About.jsx');
 
 var routes = (
   <Route name="app" handler={App} path="/">
-    <DefaultRoute handler={Home}/>
-    <Route name="home" handler={Home} path="/"/>
+    <Route name="jobs-list" handler={Jobs} path="/jobs"/>
+    <Route name="jobs-show" handler={Job} path="/jobs/:jobId"/>
+    <Route name="builds-list" handler={Builds} path="/builds"/>
+    <Route name="builds-show" handler={Build} path="/jobs/:jobId/builds/:buildId"/>
     <Route name="about" handler={About}/>
+    <Redirect from="" to="builds-list" />
   </Route>
 );
 

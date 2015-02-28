@@ -55,7 +55,8 @@ var Navigation = React.createClass({
     return (
       <Navbar brand={this.props.brand}>
         <Nav>
-          <NavItemLink to="home">Home</NavItemLink>
+          <NavItemLink to="builds-list">Builds</NavItemLink>
+          <NavItemLink to="jobs-list">Jobs</NavItemLink>
           <NavItemLink to="about">About</NavItemLink>
         </Nav>
         <Nav right={true}>

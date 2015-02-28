@@ -10,8 +10,9 @@ var App = React.createClass({
         <div className="container">
           <ReactRouter.RouteHandler data={this.props.data}/>
         </div>
+        <hr/>
         <div className="container">
-          <pre>{JSON.stringify(this.props.data.home, true, 2)}</pre>
+          &copy; 2015 Christian Hoffmeister
         </div>
       </div>
     );

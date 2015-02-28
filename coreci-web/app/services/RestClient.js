@@ -1,6 +1,8 @@
 var RestClient = {};
 
-RestClient.request = function (method, url, payload) {
+RestClient.request = function (method, url, payload, parseJson) {
+  if (parseJson === undefined) parseJson = true;
+
   return new Promise(function (resolve, reject) {
     var xhr = new XMLHttpRequest();
 
@@ -9,7 +11,7 @@ RestClient.request = function (method, url, payload) {
         switch (xhr.status) {
           case 200:
             try {
-              result = JSON.parse(xhr.responseText);
+              result = parseJson ? JSON.parse(xhr.responseText) : xhr.responseText;
               resolve(result);
             } catch (ex) {
               reject(ex);
