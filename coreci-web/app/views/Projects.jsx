@@ -3,36 +3,36 @@ var React = require('react'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx');
 
-var Jobs = React.createClass({
+var Projects = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        jobs: RestClient.get('/api/jobs')
+        projects: RestClient.get('/api/projects')
       };
     }
   },
 
   render: function () {
-    var jobs = this.props.data['jobs-list'].jobs.map(job => (
-      <tr key={job.id}>
-        <td><Link to="jobs-show" params={{jobId: job.id}}>{job.displayName}</Link></td>
-        <td className="column-timestamp-relative"><DateTime value={job.updatedAt} kind="relative"/></td>
+    var projects = this.props.data['projects-list'].projects.map(project => (
+      <tr key={project.id}>
+        <td><Link to="projects-show" params={{projectCanonicalName: project.canonicalName}}>{project.canonicalName}</Link></td>
+        <td className="column-timestamp-relative"><DateTime value={project.updatedAt} kind="relative"/></td>
       </tr>
     ));
     return (
       <table className="table">
         <thead>
           <tr>
-            <th>job</th>
+            <th>project</th>
             <th className="column-timestamp-relative"></th>
           </tr>
         </thead>
         <tbody>
-          {jobs}
+          {projects}
         </tbody>
       </table>
     );
   }
 });
 
-module.exports = Jobs;
+module.exports = Projects;

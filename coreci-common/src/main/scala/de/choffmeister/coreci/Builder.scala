@@ -27,12 +27,12 @@ class Builder(db: Database)
         case (i, ErrorStream(message)) =>
           Future(Left(message))
       }.runFold(running) {
-        case (build@Build(_, _, Running(startedAt), _, _), Left(errorMessage)) =>
+        case (build@Build(_, _, _, Running(startedAt), _, _, _), Left(errorMessage)) =>
           build.copy(status = Failed(startedAt, now, errorMessage))
         case (build, _) =>
           build
       }.map {
-        case build@Build(_, _, Running(startedAt), _, _) =>
+        case build@Build(_, _, _, Running(startedAt), _, _, _) =>
           build.copy(status = Succeeded(startedAt, now))
         case build =>
           build

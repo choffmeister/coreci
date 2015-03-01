@@ -21,7 +21,7 @@ var Navigation = React.createClass({
       <Navbar brand={this.props.brand}>
         <Nav>
           <NavItemLink to="builds-list">Builds</NavItemLink>
-          <NavItemLink to="jobs-list">Jobs</NavItemLink>
+          <NavItemLink to="projects-list">Projects</NavItemLink>
           <ModalTrigger modal={<LoginDialog />}>
             <NavItem onClick={this.noop}>Login</NavItem>
           </ModalTrigger>

@@ -16,8 +16,8 @@ var Builds = React.createClass({
     var builds = this.props.data['builds-list'].builds.map(build => (
       <tr key={build.id}>
         <td className="column-icon"><span className={'build-' + build.status.type}/></td>
-        <td><Link to="builds-show" params={{jobId: build.jobId, buildId: build.id}}>{build.id}</Link></td>
-        <td><Link to="jobs-show" params={{jobId: build.jobId}}>{build.jobId}</Link></td>
+        <td><Link to="builds-show" params={{projectCanonicalName: build.projectCanonicalName, buildNumber: build.number}}>#{build.number}</Link></td>
+        <td><Link to="projects-show" params={{projectCanonicalName: build.projectCanonicalName}}>{build.projectCanonicalName}</Link></td>
         <td className="column-timestamp-relative"><DateTime value={build.updatedAt} kind="relative"/></td>
       </tr>
     ));

@@ -15,13 +15,13 @@ class DatabaseSpec extends Specification with NoTimeConversions{
       case Right(u) => u.copy(username = u.username + "-modified")
     }
 
-    entity("jobs", _.jobs) {
-      case Left(i) => Job(userId = BSONObjectID.generate, displayName = s"job$i", description = s"This is job$i", dockerfile = "")
+    entity("projects", _.projects) {
+      case Left(i) => Project(userId = BSONObjectID.generate, canonicalName = s"project$i", title = s"Project $i", description = s"This is projects $i", dockerfile = "")
       case Right(j) => j.copy(description = j.description + "-modified")
     }
 
     entity("builds", _.builds) {
-      case Left(i) => Build(jobId = BSONObjectID.generate, status = Pending)
+      case Left(i) => Build(projectId = BSONObjectID.generate, status = Pending)
       case Right(b) => b.copy(status = Running(BSONDateTime(0)))
     }
 

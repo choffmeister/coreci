@@ -30,10 +30,10 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
   private def byId(id: BSONObjectID): BSONDocument = BSONDocument("_id" -> id)
 }
 
-class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
+class Database(val mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(implicit ec: ExecutionContext) {
   lazy val users = new UserTable(this, mongoDbDatabase(collectionNamePrefix + "users"))
   lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "userPasswords"))
-  lazy val jobs = new JobTable(this, mongoDbDatabase(collectionNamePrefix + "jobs"))
+  lazy val projects = new ProjectTable(this, mongoDbDatabase(collectionNamePrefix + "projects"))
   lazy val builds = new BuildTable(this, mongoDbDatabase(collectionNamePrefix + "builds"))
   lazy val outputs = new OutputTable(this, mongoDbDatabase(collectionNamePrefix + "outputs"))
 
@@ -41,7 +41,7 @@ class Database(mongoDbDatabase: DefaultDB, collectionNamePrefix: String = "")(im
     Future.sequence(Seq(
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "users")),
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "userPasswords")),
-      mongoDbDatabase.command(new Drop(collectionNamePrefix + "jobs")),
+      mongoDbDatabase.command(new Drop(collectionNamePrefix + "projects")),
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "builds")),
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "outputs"))
     )).map(_ => ())

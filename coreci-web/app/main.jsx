@@ -4,17 +4,17 @@ var React = require('react'),
     Redirect = ReactRouter.Redirect;
 
 var App = require('./components/App.jsx'),
-    Jobs = require('./views/Jobs.jsx'),
-    Job = require('./views/Job.jsx'),
+    Projects = require('./views/Projects.jsx'),
+    Project = require('./views/Project.jsx'),
     Builds = require('./views/Builds.jsx'),
     Build = require('./views/Build.jsx');
 
 var routes = (
   <Route name="app" handler={App} path="/">
-    <Route name="jobs-list" handler={Jobs} path="/jobs"/>
-    <Route name="jobs-show" handler={Job} path="/jobs/:jobId"/>
+    <Route name="projects-list" handler={Projects} path="/projects"/>
+    <Route name="projects-show" handler={Project} path="/projects/:projectCanonicalName"/>
     <Route name="builds-list" handler={Builds} path="/builds"/>
-    <Route name="builds-show" handler={Build} path="/jobs/:jobId/builds/:buildId"/>
+    <Route name="builds-show" handler={Build} path="/projects/:projectCanonicalName/builds/:buildNumber"/>
     <Redirect from="" to="builds-list" />
   </Route>
 );

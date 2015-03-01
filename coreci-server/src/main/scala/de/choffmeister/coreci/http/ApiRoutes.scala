@@ -13,13 +13,13 @@ import scala.concurrent.ExecutionContext
 class ApiRoutes(val database: Database)
     (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
   lazy val authRoutes = new AuthRoutes(database)
-  lazy val jobRoutes = new JobRoutes(database)
+  lazy val projectRoutes = new ProjectRoutes(database)
   lazy val buildRoutes = new BuildRoutes(database)
   lazy val integrationRoutes = new IntegrationRoutes(database)
 
   lazy val routes = filterHttpChallengesByExtensionHeader {
     pathPrefix("auth")(authRoutes.routes) ~
-    pathPrefix("jobs")(jobRoutes.routes) ~
+    pathPrefix("projects")(projectRoutes.routes) ~
     pathPrefix("builds")(buildRoutes.routes) ~
     pathPrefix("integrations")(integrationRoutes.routes)
   }

@@ -7,8 +7,8 @@ var Build = React.createClass({
   statics: {
     fetchData: function (params) {
       return {
-        build: RestClient.get('/api/jobs/' + params.jobId + '/builds/' + params.buildId),
-        output: RestClient.get('/api/jobs/' + params.jobId + '/builds/' + params.buildId + '/output', true)
+        build: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber),
+        output: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber + '/output', true)
       };
     }
   },
@@ -33,7 +33,7 @@ var Build = React.createClass({
 
     return (
       <div>
-        <h1>Build {build.id}</h1>
+        <h1>Build {build.projectCanonicalName} #{build.number}</h1>
         {error}
         <dl>
           <dt>Status</dt>

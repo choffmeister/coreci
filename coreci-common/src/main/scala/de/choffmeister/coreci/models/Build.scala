@@ -14,10 +14,12 @@ case class Failed(startedAt: BSONDateTime, finishedAt: BSONDateTime, errorMessag
 
 case class Build(
   id: BSONObjectID = BSONObjectID("00" * 12),
-  jobId: BSONObjectID,
+  projectId: BSONObjectID,
+  number: Int = 0,
   status: BuildStatus = Pending,
   createdAt: BSONDateTime = BSONDateTime(0),
-  updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
+  updatedAt: BSONDateTime = BSONDateTime(0),
+  projectCanonicalName: String = "") extends BaseModel
 
 class BuildTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Build](database, collection) {
   implicit val reader = BuildJSONFormat.Reader
@@ -26,7 +28,17 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
   override def preInsert(obj: Build): Future[Build] = {
     val id = BSONObjectID.generate
     val now = BSONDateTime(System.currentTimeMillis)
-    Future.successful(obj.copy(id = id, createdAt = now))
+    database.projects.getNextBuildNumber(obj.projectId).flatMap {
+      case Some(number) =>
+        database.projects.find(obj.projectId).map {
+          case Some(project) =>
+            obj.copy(id = id, number = number, createdAt = now, projectCanonicalName = project.canonicalName)
+          case None =>
+            ???
+        }
+      case None =>
+        ???
+    }
   }
 
   override def preUpdate(obj: Build): Future[Build] = {
@@ -34,10 +46,10 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
     Future.successful(obj.copy(updatedAt = now))
   }
 
-  def findByJob(jobId: BSONObjectID): Future[List[Build]] = query(BSONDocument("jobId" -> jobId))
+  def listByProject(projectId: BSONObjectID): Future[List[Build]] = query(BSONDocument("projectId" -> projectId))
+  def findByNumber(projectId: BSONObjectID, number: Int): Future[Option[Build]] = queryOne(BSONDocument("projectId" -> projectId, "number" -> number))
 
-  collection.indexesManager.ensure(Index(List("updatedAt" -> IndexType.Descending)))
-  collection.indexesManager.ensure(Index(List("jobId" -> IndexType.Ascending, "updatedAt" -> IndexType.Descending)))
+  collection.indexesManager.ensure(Index(List("projectId" -> IndexType.Ascending, "number" -> IndexType.Descending), unique = true))
 }
 
 object BuildJSONFormat {
@@ -88,20 +100,24 @@ object BuildJSONFormat {
   implicit object Reader extends BSONDocumentReader[Build] {
     def read(doc: BSONDocument): Build = Build(
       id = doc.getAs[BSONObjectID]("_id").get,
-      jobId = doc.getAs[BSONObjectID]("jobId").get,
+      projectId = doc.getAs[BSONObjectID]("projectId").get,
+      number = doc.getAs[Int]("number").get,
       status = doc.getAs[BuildStatus]("status").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
-      updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
+      updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
+      projectCanonicalName = doc.getAs[String]("projectCanonicalName").get
     )
   }
 
   implicit object Writer extends BSONDocumentWriter[Build] {
     def write(obj: Build): BSONDocument = BSONDocument(
       "_id" -> obj.id,
-      "jobId" -> obj.jobId,
+      "projectId" -> obj.projectId,
+      "number" -> obj.number,
       "status" -> obj.status,
       "createdAt" -> obj.createdAt,
-      "updatedAt" -> obj.updatedAt
+      "updatedAt" -> obj.updatedAt,
+      "projectCanonicalName" -> obj.projectCanonicalName
     )
   }
 }
