@@ -22,7 +22,6 @@ var Navigation = React.createClass({
         <Nav>
           <NavItemLink to="builds-list">Builds</NavItemLink>
           <NavItemLink to="jobs-list">Jobs</NavItemLink>
-          <NavItemLink to="about">About</NavItemLink>
           <ModalTrigger modal={<LoginDialog />}>
             <NavItem onClick={this.noop}>Login</NavItem>
           </ModalTrigger>

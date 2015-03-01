@@ -7,8 +7,7 @@ var App = require('./components/App.jsx'),
     Jobs = require('./views/Jobs.jsx'),
     Job = require('./views/Job.jsx'),
     Builds = require('./views/Builds.jsx'),
-    Build = require('./views/Build.jsx'),
-    About = require('./views/About.jsx');
+    Build = require('./views/Build.jsx');
 
 var routes = (
   <Route name="app" handler={App} path="/">
@@ -16,7 +15,6 @@ var routes = (
     <Route name="jobs-show" handler={Job} path="/jobs/:jobId"/>
     <Route name="builds-list" handler={Builds} path="/builds"/>
     <Route name="builds-show" handler={Build} path="/jobs/:jobId/builds/:buildId"/>
-    <Route name="about" handler={About}/>
     <Redirect from="" to="builds-list" />
   </Route>
 );
