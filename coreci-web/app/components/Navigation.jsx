@@ -1,21 +1,21 @@
 var React = require('react');
-
-var ReactRouter = require('react-router'),
-    RouteHandler = ReactRouter.RouteHandler;
-
-var ReactBootstrap = require('react-bootstrap'),
+    ReactRouter = require('react-router'),
+    RouteHandler = ReactRouter.RouteHandler,
+    ReactBootstrap = require('react-bootstrap'),
     Navbar = ReactBootstrap.Navbar,
     Nav = ReactBootstrap.Nav,
     NavItem = ReactBootstrap.NavItem,
-    DropdownButton = ReactBootstrap.DropdownButton,
-    MenuItem = ReactBootstrap.MenuItem;
+    ModalTrigger = ReactBootstrap.ModalTrigger,
+    ReactRouterBootstrap = require('react-router-bootstrap'),
+    NavItemLink = ReactRouterBootstrap.NavItemLink;
 
-var ReactRouterBootstrap = require('react-router-bootstrap'),
-    NavItemLink = ReactRouterBootstrap.NavItemLink,
-    MenuItemLink = ReactRouterBootstrap.MenuItemLink;
-
+var LoginDialog = require('../dialogs/Login.jsx');
 
 var Navigation = React.createClass({
+  noop: function (event) {
+    event.preventDefault();
+  },
+
   render: function () {
     return (
       <Navbar brand={this.props.brand}>
@@ -23,7 +23,9 @@ var Navigation = React.createClass({
           <NavItemLink to="builds-list">Builds</NavItemLink>
           <NavItemLink to="jobs-list">Jobs</NavItemLink>
           <NavItemLink to="about">About</NavItemLink>
-          <NavItemLink to="login">Login</NavItemLink>
+          <ModalTrigger modal={<LoginDialog />}>
+            <NavItem onClick={this.noop}>Login</NavItem>
+          </ModalTrigger>
         </Nav>
       </Navbar>
     );

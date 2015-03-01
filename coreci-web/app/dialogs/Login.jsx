@@ -1,11 +1,11 @@
 var React = require('react'),
-    ReactRouter = require('react-router'),
+    ReactBootstrap = require('react-bootstrap'),
+    Button = ReactBootstrap.Button,
+    Modal = ReactBootstrap.Modal,
     AccessToken = require('../services/AccessToken'),
     Callout = require('../components/Callout.jsx');
 
 var Login = React.createClass({
-  mixins: [ReactRouter.Navigation],
-
   getInitialState: function () {
     return {
       username: '',
@@ -25,7 +25,7 @@ var Login = React.createClass({
 
     AccessToken.create(this.state.username, this.state.password)
       .then(token => {
-        this.transitionTo('app');
+        this.props.onRequestHide();
       })
       .catch(err => {
         this.reset();
@@ -60,18 +60,25 @@ var Login = React.createClass({
       message = <Callout kind={this.state.message.type}>{this.state.message.text}</Callout>;
     }
     return (
-      <form onSubmit={this.onSubmit}>
-        {message}
-        <div className="form-group">
-          <label htmlFor="username">Username</label>
-          <input onChange={this.onChange} value={this.state.username} disabled={this.state.busy} ref="username" type="text" id="username" placeholder="Your username" className="form-control"/>
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password</label>
-          <input onChange={this.onChange} value={this.state.password} disabled={this.state.busy} ref="password" type="password" id="password" placeholder="Your password" className="form-control"/>
-        </div>
-        <button type="submit" disabled={this.state.busy} className="btn btn-primary">Login</button>
-      </form>
+      <Modal {...this.props} bsStyle="primary" title="Login" animation={false} backdrop={true}>
+        <form onSubmit={this.onSubmit} autoComplete="off">
+          <div className="modal-body">
+            {message}
+            <div className="form-group">
+              <label htmlFor="username">Username</label>
+              <input onChange={this.onChange} value={this.state.username} disabled={this.state.busy} ref="username" type="text" id="username" placeholder="Your username" className="form-control"/>
+            </div>
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input onChange={this.onChange} value={this.state.password} disabled={this.state.busy} ref="password" type="password" id="password" placeholder="Your password" className="form-control"/>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <Button onClick={this.onSubmit} type="submit">Login</Button>
+            <Button onClick={this.props.onRequestHide}>Cancel</Button>
+          </div>
+        </form>
+      </Modal>
     );
   }
 });
