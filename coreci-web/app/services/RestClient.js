@@ -5,7 +5,7 @@ var RestClient = {};
 var request = function (method, url, payload, raw, depth) {
   if (depth === undefined) depth = 0;
 
-  return new Promise(function (resolve, reject) {
+  var promise = new Promise(function (resolve, reject) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
       if (xhr.readyState == 4) {
@@ -40,6 +40,16 @@ var request = function (method, url, payload, raw, depth) {
     xhr.setRequestHeader('X-WWW-Authenticate-Filter', 'Bearer');
     xhr.send(payload);
   });
+
+  if (depth === 0) {
+    return promise.catch(function (err) {
+      window.alert(err);
+      throw err;
+    });
+  } else {
+    return promise;
+  }
+
 };
 
 RestClient.get = function(url, raw) {
