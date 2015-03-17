@@ -29,13 +29,13 @@ case class ErrorStream(message: String) extends DockerStream
  */
 class Docker(host: String, port: Int)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
-  def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Future[Source[DockerStream]] = {
+  def build(tar: Source[ByteString, Unit], repository: String, tag: Option[String] = None): Future[Source[DockerStream, Unit]] = {
     val fullName = repository + tag.map("%2F" + _).getOrElse("")
     val entity = Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
     log.debug(s"Building $fullName from Dockerfile")
 
     val req = HttpRequest(POST, Uri("/build?t=" + fullName), entity = entity)
-    Source.single(req).via(Http().outgoingConnection(host, port).flow)
+    Source.single(req).via(Http().outgoingConnection(host, port))
       .runWith(Sink.head)
       .map { res =>
         res.entity.dataBytes.map(_.utf8String).map { s =>

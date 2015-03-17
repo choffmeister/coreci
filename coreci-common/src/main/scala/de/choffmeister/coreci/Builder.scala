@@ -47,7 +47,7 @@ class Builder(db: Database)
     }
   }
 
-  private def withIndex[T](source: Source[T]): Source[(Long, T)] = {
+  private def withIndex[T, Mat](source: Source[T, Mat]): Source[(Long, T), Mat] = {
     var index = 0L
     source.map { item =>
       val res = (index, item)

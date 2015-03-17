@@ -40,7 +40,7 @@ class GitHubIntegration(implicit system: ActorSystem, executor: ExecutionContext
       }
     }
 
-  def archiveTarball(archiveUrlTemplate: String, ref: String): Future[Source[ByteString]] = {
+  def archiveTarball(archiveUrlTemplate: String, ref: String): Future[Source[ByteString, Unit]] = {
     val archiveUrl = Uri(archiveUrlTemplate
       .replace("{archive_format}", "tarball")
       .replace("{/ref}", "/" + ref))
@@ -49,13 +49,13 @@ class GitHubIntegration(implicit system: ActorSystem, executor: ExecutionContext
     get(archiveUrl, hopsRemaining = 1)
   }
 
-  private def get(absoluteUri: Uri, headers: List[HttpHeader] = Nil, hopsRemaining: Int = 0): Future[Source[ByteString]] = {
+  private def get(absoluteUri: Uri, headers: List[HttpHeader] = Nil, hopsRemaining: Int = 0): Future[Source[ByteString, Unit]] = {
     val host = absoluteUri.authority.host.address()
     val port = absoluteUri.effectivePort
     val relativeUri = absoluteUri.toRelative
 
     Source.single(HttpRequest(GET, relativeUri, headers))
-      .via(Http().outgoingConnection(host, port).flow)
+      .via(Http().outgoingConnection(host, port))
       .runWith(Sink.head)
       .flatMap { res =>
         res.status match {

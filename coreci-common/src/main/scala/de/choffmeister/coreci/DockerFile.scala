@@ -34,7 +34,7 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
   def asString: String =
     instructions.map(inst => inst.name.toUpperCase + " " + inst.arguments).mkString("\n\n") + "\n"
 
-  def asTar: Source[ByteString] = {
+  def asTar: Source[ByteString, Unit] = {
     val mem = new ByteArrayOutputStream()
     val tar = new TarArchiveOutputStream(new GZIPOutputStream(mem))
     val content = asString.getBytes("UTF-8")

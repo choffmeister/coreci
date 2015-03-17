@@ -2,8 +2,11 @@ package de.choffmeister.coreci
 
 import akka.actor._
 import akka.http.Http
+import akka.http.model.HttpRequest
 import akka.http.server.Directives._
+import akka.http.server.Route
 import akka.stream.ActorFlowMaterializer
+import akka.stream.scaladsl.Flow
 import de.choffmeister.coreci.http._
 import de.choffmeister.coreci.models._
 
@@ -21,7 +24,8 @@ class Server(config: Config, serverConfig: ServerConfig, database: Database) ext
     val routes =
       pathPrefix("api")(apiRoutes.routes) ~
       pathPrefixTest(!"api")(staticContentRoutes.routes)
-    binding.startHandlingWith(compressResponseIfRequested()(routes))
+
+    binding.runForeach(_.handleWith(Flow[HttpRequest].mapAsync(Route.asyncHandler(routes))))
   }
 
   def shutdown(): Unit = {
