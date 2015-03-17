@@ -16,7 +16,8 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
           .run("echo hello world")
 
-        val pending = await(db.builds.insert(Build(projectId = BSONObjectID.generate)))
+        var project = await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+        val pending = await(db.builds.insert(Build(projectId = project.id)))
         val finished = await(builder.run(pending, dockerfile))
         finished.status must beAnInstanceOf[Succeeded]
       }
@@ -28,7 +29,8 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
           .run("unknowncommand")
 
-        val pending = await(db.builds.insert(Build(projectId = BSONObjectID.generate)))
+        var project = await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+        val pending = await(db.builds.insert(Build(projectId = project.id)))
         val finished = await(builder.run(pending, dockerfile))
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("unknowncommand")
@@ -44,7 +46,8 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val builder = new Builder(db)
         val dockerfile = Dockerfile.parse("{}")
 
-        val pending = await(db.builds.insert(Build(projectId = BSONObjectID.generate)))
+        var project = await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+        val pending = await(db.builds.insert(Build(projectId = project.id)))
         val finished = await(builder.run(pending, dockerfile))
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("cannot continue")

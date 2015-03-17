@@ -37,7 +37,7 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
             ???
         }
       case None =>
-        ???
+        throw new Exception(s"Could not get build number because project ${obj.projectId} is unknown")
     }
   }
 
