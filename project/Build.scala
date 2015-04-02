@@ -20,8 +20,8 @@ object Build extends sbt.Build {
   lazy val commonSettings = Defaults.coreDefaultSettings ++ coordinateSettings ++ buildSettings ++ resolverSettings
 
   lazy val serverPackSettings = packSettings ++ Seq(
-    packMain := Map("server" -> "de.choffmeister.coreci.Server"),
-    packExtraClasspath := Map("server" -> Seq("${PROG_HOME}/conf")))
+    packMain := Map("coreci" -> "de.choffmeister.coreci.Application"),
+    packExtraClasspath := Map("coreci" -> Seq("${PROG_HOME}/conf")))
 
   lazy val common = (project in file("coreci-common"))
     .settings(commonSettings: _*)
@@ -58,6 +58,7 @@ object Build extends sbt.Build {
     .settings(libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M3",
       "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M3",
+      "org.rogach" %% "scallop" % "0.9.5",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")

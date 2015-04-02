@@ -44,7 +44,7 @@ class Database(val mongoDbDatabase: DefaultDB, collectionNamePrefix: String = ""
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "projects")),
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "builds")),
       mongoDbDatabase.command(new Drop(collectionNamePrefix + "outputs"))
-    )).map(_ => ())
+    )).map(_ => ()).recover { case _ => () }
 }
 
 object Database {
