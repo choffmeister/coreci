@@ -4,6 +4,7 @@ var React = require('react');
     ReactBootstrap = require('react-bootstrap'),
     Navbar = ReactBootstrap.Navbar,
     Nav = ReactBootstrap.Nav,
+    CollapsableNav = ReactBootstrap.CollapsableNav,
     NavItem = ReactBootstrap.NavItem,
     ModalTrigger = ReactBootstrap.ModalTrigger,
     ReactRouterBootstrap = require('react-router-bootstrap'),
@@ -18,14 +19,16 @@ var Navigation = React.createClass({
 
   render: function () {
     return (
-      <Navbar brand={this.props.brand}>
-        <Nav>
-          <NavItemLink to="builds-list">Builds</NavItemLink>
-          <NavItemLink to="projects-list">Projects</NavItemLink>
-          <ModalTrigger modal={<LoginDialog />}>
-            <NavItem onClick={this.noop}>Login</NavItem>
-          </ModalTrigger>
-        </Nav>
+      <Navbar brand={this.props.brand} toggleNavKey={0}>
+        <CollapsableNav eventKey={0}>
+          <Nav navbar right>
+            <NavItemLink to="builds-list" eventKey={1}>Builds</NavItemLink>
+            <NavItemLink to="projects-list" eventKey={2}>Projects</NavItemLink>
+            <ModalTrigger modal={<LoginDialog />}>
+              <NavItem onClick={this.noop} eventKey={3}>Login</NavItem>
+            </ModalTrigger>
+          </Nav>
+        </CollapsableNav>
       </Navbar>
     );
   }
