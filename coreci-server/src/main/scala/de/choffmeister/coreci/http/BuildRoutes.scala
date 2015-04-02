@@ -12,7 +12,9 @@ class BuildRoutes(val database: Database)
   lazy val routes =
     pathEnd {
       get {
-        complete(database.builds.all)
+        pageable { page =>
+          complete(database.builds.list(page = page))
+        }
       }
     }
 }

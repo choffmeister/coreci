@@ -15,7 +15,9 @@ class ProjectRoutes(val database: Database)
   lazy val routes =
     pathEnd {
       get {
-        complete(database.projects.all)
+        pageable { page =>
+          complete(database.projects.list(page = page))
+        }
       }
     } ~
     pathPrefix(Segment) { projectCanonicalName =>
@@ -41,7 +43,9 @@ class ProjectRoutes(val database: Database)
           pathPrefix("builds") {
             pathEnd {
               get {
-                complete(database.builds.listByProject(project.id))
+                pageable { page =>
+                  complete(database.builds.listByProject(project.id, page))
+                }
               }
             } ~
             pathPrefix(IntNumber) { buildNumber =>

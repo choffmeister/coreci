@@ -15,9 +15,16 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
   implicit val reader: BSONDocumentReader[M]
   implicit val writer: BSONDocumentWriter[M]
 
-  def all: Future[List[M]] = query(BSONDocument.empty)
+  def all: Future[List[M]] = query()
   def find(id: BSONObjectID): Future[Option[M]] = queryOne(byId(id))
-  def query(q: BSONDocument): Future[List[M]] = collection.find(q).cursor[M].collect[List]()
+  def query(q: BSONDocument = BSONDocument.empty, sort: BSONDocument = BSONDocument.empty, page: (Option[Int], Option[Int]) = (None, None)): Future[List[M]] = {
+    page match {
+      case (Some(skip), Some(limit)) => collection.find(q).sort(sort).options(QueryOpts(skipN = skip, batchSizeN = limit)).cursor[M].collect[List](limit)
+      case (Some(skip), None) => collection.find(q).sort(sort).options(QueryOpts(skipN = skip)).cursor[M].collect[List]()
+      case (None, Some(limit)) => collection.find(q).options(QueryOpts(batchSizeN = limit)).sort(sort).cursor[M].collect[List](limit)
+      case (None, None) => collection.find(q).sort(sort).cursor[M].collect[List]()
+    }
+  }
   def queryOne(q: BSONDocument): Future[Option[M]] = collection.find(q).one[M]
   def insert(m: M): Future[M] = preInsert(m).flatMap(m2 => preUpdate(m2).flatMap(m3 => collection.insert(m3).map(_ => m3)))
   def update(m: M): Future[M] = preUpdate(m).flatMap(m2 => collection.update(byId(m2.id), m2).map(_ => m2))

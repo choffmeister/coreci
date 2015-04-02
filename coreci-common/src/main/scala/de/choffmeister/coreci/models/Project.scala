@@ -37,7 +37,10 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
     collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending))).map(_ => ())
   }
 
-  def findByCanonicalName(cn: String): Future[Option[Project]] = queryOne(BSONDocument("canonicalName" -> cn))
+  def list(page: (Option[Int], Option[Int])): Future[List[Project]] =
+    database.projects.query(sort = BSONDocument("updatedAt" -> -1), page = page)
+  def findByCanonicalName(cn: String): Future[Option[Project]] =
+    queryOne(BSONDocument("canonicalName" -> cn))
 
   def getNextBuildNumber(projectId: BSONObjectID): Future[Option[Int]] = {
     val selector = BSONDocument("_id" -> projectId)

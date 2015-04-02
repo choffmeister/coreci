@@ -1,7 +1,7 @@
 var React = require('react'),
-    ReactRouter = require('react-router'),
-    DateTime = require('../components/DateTime.jsx'),
-    RestClient = require('../services/RestClient');
+    Link = require('react-router').Link,
+    RestClient = require('../services/RestClient'),
+    DateTime = require('../components/DateTime.jsx');
 
 var Project = React.createClass({
   mixins: [ReactRouter.Navigation],
@@ -9,7 +9,8 @@ var Project = React.createClass({
   statics: {
     fetchData: function (params) {
       return {
-        project: RestClient.get('/api/projects/' + params.projectCanonicalName)
+        project: RestClient.get('/api/projects/' + params.projectCanonicalName),
+        builds: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds')
       };
     }
   },
@@ -22,6 +23,28 @@ var Project = React.createClass({
   },
 
   render: function () {
+    var builds = this.props.data['projects-show'].builds.map(build => (
+      <tr key={build.id}>
+        <td className="column-icon"><span className={'build-' + build.status.type}/></td>
+        <td><Link to="builds-show" params={{projectCanonicalName: build.projectCanonicalName, buildNumber: build.number}}>#{build.number}</Link></td>
+        <td className="column-timestamp-relative"><DateTime value={build.updatedAt} kind="relative"/></td>
+      </tr>
+    ));
+    var buildList = (
+      <table className="table">
+        <thead>
+        <tr>
+          <th className="column-icon"></th>
+          <th>build</th>
+          <th className="column-timestamp-relative"></th>
+        </tr>
+        </thead>
+        <tbody>
+          {builds}
+        </tbody>
+      </table>
+    );
+
     var project = this.props.data['projects-show'].project;
     return (
       <div>
@@ -37,6 +60,7 @@ var Project = React.createClass({
           <dt>Dockerfile</dt>
           <dd><pre>{project.dockerfile}</pre></dd>
         </dl>
+        {buildList}
       </div>
     );
   }

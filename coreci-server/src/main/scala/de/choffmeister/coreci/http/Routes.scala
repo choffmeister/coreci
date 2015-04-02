@@ -66,4 +66,10 @@ trait Routes extends JsonProtocol {
         }
       }
     }
+
+  def pageable: Directive1[(Option[Int], Option[Int])] = {
+    parameters('skip.as[Int].?, 'limit.as[Int].?).tflatMap { res =>
+      provide((res._1, res._2))
+    }
+  }
 }

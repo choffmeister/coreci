@@ -21,7 +21,7 @@ var Builds = React.createClass({
         <td className="column-timestamp-relative"><DateTime value={build.updatedAt} kind="relative"/></td>
       </tr>
     ));
-    return (
+    var buildList = (
       <table className="table">
         <thead>
           <tr>
@@ -35,6 +35,12 @@ var Builds = React.createClass({
           {builds}
         </tbody>
       </table>
+    );
+
+    return (
+      <div>
+        {buildList}
+      </div>
     );
   }
 });
