@@ -4,7 +4,9 @@ var React = require('react'),
     DateTime = require('../components/DateTime.jsx');
 
 var Project = React.createClass({
-  mixins: [ReactRouter.Navigation],
+  contextTypes: {
+    router: React.PropTypes.func
+  },
 
   statics: {
     fetchData: function (params) {
@@ -16,9 +18,8 @@ var Project = React.createClass({
   },
 
   run: function () {
-    var self = this;
-    RestClient.post('/api/projects/' + this.props.data['projects-show'].project.canonicalName + '/run').then(function (build) {
-      self.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
+    RestClient.post('/api/projects/' + this.props.data['projects-show'].project.canonicalName + '/run').then(build => {
+      this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
     });
   },
 
