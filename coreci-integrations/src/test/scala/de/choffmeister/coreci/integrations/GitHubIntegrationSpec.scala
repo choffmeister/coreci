@@ -19,6 +19,6 @@ class GitHubIntegrationSpec extends Specification with NoTimeConversions {
 
         await(future) must be_>=(0L)
       }
-    }
+    }.pendingUntilFixed("Library akka-http does not yet support SSL")
   }
 }
