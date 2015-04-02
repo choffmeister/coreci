@@ -25,14 +25,24 @@ var Login = React.createClass({
 
     AccessToken.create(this.state.username, this.state.password)
       .then(token => {
-        this.props.onRequestHide();
+        if (token) {
+          this.props.onRequestHide();
+        } else {
+          this.reset();
+          this.setState({
+            message: {
+              type: 'warning',
+              text: 'The credentials are invalid.'
+            }
+          });
+        }
       })
       .catch(err => {
         this.reset();
         this.setState({
           message: {
-            type: err === null ? 'warning' : 'error',
-            text: err === null ? 'The credentials are invalid.' : 'There was an unknown error.'
+            type: 'error',
+            text: 'There was an unknown error.'
           }
         });
       });

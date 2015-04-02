@@ -22,8 +22,16 @@ var request = function (method, url, payload, raw, depth) {
             var authHeader = xhr.getResponseHeader('www-authenticate');
             if (authHeader && authHeader.toLowerCase().substring(0, 7) == 'bearer ' && authHeader.indexOf('expired') > 0 && depth < 1) {
               AccessToken.renew()
-                .then(token => request(method, url, payload, raw, depth + 1).then(res => resolve(res)).catch(err => reject(err)))
-                .catch(err => reject(err))
+                .then(token => {
+                  if (token) {
+                    request(method, url, payload, raw, depth + 1)
+                      .then(res => resolve(res))
+                      .catch(err => reject(err));
+                  } else {
+                    reject(new Error(xhr.statusText));
+                  }
+                })
+                .catch(err => reject(err));
             } else {
               reject(new Error(xhr.statusText));
             }

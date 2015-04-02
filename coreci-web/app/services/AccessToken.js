@@ -26,7 +26,7 @@ var obtainAccessToken = function (url, authorization) {
             break;
           case 404:
           case 401:
-            reject(null);
+            resolve(null);
             break;
           default:
             reject(new Error("An unknown error occured"));
