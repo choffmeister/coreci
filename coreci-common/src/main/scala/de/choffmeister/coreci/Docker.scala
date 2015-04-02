@@ -34,7 +34,7 @@ class Docker(host: String, port: Int)
     val entity = Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
     log.debug(s"Building $fullName from Dockerfile")
 
-    val req = HttpRequest(POST, Uri("/build?t=" + fullName), entity = entity)
+    val req = HttpRequest(POST, Uri(s"/build?forcerm=true&nocache=true"), entity = entity)
     Source.single(req).via(Http().outgoingConnection(host, port))
       .runWith(Sink.head)
       .map { res =>
