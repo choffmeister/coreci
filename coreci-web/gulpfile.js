@@ -80,11 +80,15 @@ gulp.task('assets-bootstrap-font', function () {
 gulp.task('assets', ['assets-bootstrap-font']);
 
 gulp.task('connect', ['build'], function (next) {
+  var serveStatic = require('serve-static');
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
     .use(rewrite(['!(^/app/) /index.html [L]']))
-    .use(connect.static(config.dest()))
-    .listen(config.port, next);
+    .use(serveStatic(config.dest()))
+    .listen(config.port, function () {
+      gutil.log('Listening on http://localhost:' + config.port + '/');
+      next();
+    });
 });
 
 gulp.task('watch', ['build'], function () {

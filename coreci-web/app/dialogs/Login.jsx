@@ -60,7 +60,7 @@ var Login = React.createClass({
       message = <Callout kind={this.state.message.type}>{this.state.message.text}</Callout>;
     }
     return (
-      <Modal {...this.props} bsStyle="primary" title="Login" animation={false} backdrop={true}>
+      <Modal {...this.props} bsStyle="default" title="Login" animation={false} backdrop={true}>
         <form onSubmit={this.onSubmit} autoComplete="off">
           <div className="modal-body">
             {message}
