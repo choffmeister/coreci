@@ -19,6 +19,9 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
   def comment(text: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("#", text))
 
+  def workdir(path: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("WORKDIR", path))
+
   def run(command: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("RUN", command))
 
