@@ -19,15 +19,13 @@ class Builder(db: Database)
     val finished = for {
       running <- db.builds.update(pending.copy(status = Running(startedAt)))
       stream <- docker.build(dockerfile.asTar, running.id.stringify)
-      finished <- withIndex(stream).mapAsync[Either[String, Output]] {
-        case (i, StatusStream(content)) =>
-          db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(Right.apply)
-        case (i, OutputStream(content)) =>
-          db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(Right.apply)
-        case (i, ErrorStream(message)) =>
-          Future(Left(message))
+      finished <- withIndex(stream).mapAsync[DockerStream] {
+        case (i, s@OutputStream(content)) =>
+          db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(_ => s)
+        case (i, s) =>
+          Future(s)
       }.runFold(running) {
-        case (build@Build(_, _, _, Running(startedAt), _, _, _), Left(errorMessage)) =>
+        case (build@Build(_, _, _, Running(startedAt), _, _, _), ErrorStream(errorMessage)) =>
           build.copy(status = Failed(startedAt, now, errorMessage))
         case (build, _) =>
           build
