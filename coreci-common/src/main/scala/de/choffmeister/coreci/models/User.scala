@@ -28,10 +28,14 @@ class UserTable(database: Database, collection: BSONCollection)(implicit executo
     Future.successful(obj.copy(updatedAt = now))
   }
 
-  def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("username" -> userName))
+  override def configure(): Future[Unit] = {
+    Future.sequence(Seq(
+      collection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true)),
+      collection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true))
+    )).map(_ => ())
+  }
 
-  collection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true))
-  collection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true))
+  def findByUserName(userName: String): Future[Option[User]] = queryOne(BSONDocument("username" -> userName))
 }
 
 object UserBSONFormat {

@@ -22,12 +22,14 @@ class UserPasswordTable(database: Database, collection: BSONCollection)(implicit
     Future.successful(obj.copy(id = id, createdAt = now))
   }
 
+  override def configure(): Future[Unit] = {
+    collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "createdAt" -> IndexType.Descending))).map(_ => ())
+  }
+
   def findCurrentPassword(userId: BSONObjectID): Future[Option[UserPassword]] = queryOne(BSONDocument(
     "$query" -> BSONDocument("userId" -> userId),
     "$orderby" -> BSONDocument("createdAt" -> -1)
   ))
-
-  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending, "createdAt" -> IndexType.Descending)))
 }
 
 object UserPasswordBSONFormat {

@@ -46,10 +46,12 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
     Future.successful(obj.copy(updatedAt = now))
   }
 
+  override def configure(): Future[Unit] = {
+    collection.indexesManager.ensure(Index(List("projectId" -> IndexType.Ascending, "number" -> IndexType.Descending), unique = true)).map(_ => ())
+  }
+
   def listByProject(projectId: BSONObjectID): Future[List[Build]] = query(BSONDocument("projectId" -> projectId))
   def findByNumber(projectId: BSONObjectID, number: Int): Future[Option[Build]] = queryOne(BSONDocument("projectId" -> projectId, "number" -> number))
-
-  collection.indexesManager.ensure(Index(List("projectId" -> IndexType.Ascending, "number" -> IndexType.Descending), unique = true))
 }
 
 object BuildJSONFormat {

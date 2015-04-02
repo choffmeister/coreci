@@ -15,11 +15,18 @@ object Application extends App with Logger {
       val config = Config.load()
       val database = Database.open(config.mongoDbServers, config.mongoDbDatabaseName)
       val generator = new TestDataGenerator(config, database)
-      waitAndExit(database.clear().flatMap(_ => generator.run()))
+      waitAndExit(for {
+        _ <- database.clear()
+        _ <- database.configure()
+        _ <- generator.run()
+      } yield ())
     case Some(cla.reset) =>
       val config = Config.load()
       val database = Database.open(config.mongoDbServers, config.mongoDbDatabaseName)
-      waitAndExit(database.clear())
+      waitAndExit(for {
+        _ <- database.clear()
+        _ <- database.configure()
+      } yield ())
     case _ =>
       val config = Config.load()
       val serverConfig = ServerConfig.load()

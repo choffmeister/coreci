@@ -23,9 +23,11 @@ class OutputTable(database: Database, collection: BSONCollection)(implicit execu
     Future.successful(obj.copy(id = id, timestamp = now))
   }
 
-  def findByBuild(buildId: BSONObjectID): Future[List[Output]] = query(BSONDocument("buildId" -> buildId))
+  override def configure(): Future[Unit] = {
+    collection.indexesManager.ensure(Index(List("buildId" -> IndexType.Ascending, "index" -> IndexType.Ascending))).map(_ => ())
+  }
 
-  collection.indexesManager.ensure(Index(List("buildId" -> IndexType.Ascending, "index" -> IndexType.Ascending)))
+  def findByBuild(buildId: BSONObjectID): Future[List[Output]] = query(BSONDocument("buildId" -> buildId))
 }
 
 object OutputBSONFormat {

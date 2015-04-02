@@ -27,6 +27,16 @@ abstract class Table[M <: BaseModel](database: Database, collection: BSONCollect
   def preInsert(m: M): Future[M] = Future.successful(m)
   def preUpdate(m: M): Future[M] = Future.successful(m)
 
+  def configure(): Future[Unit] = {
+    Future()
+  }
+
+  def clear(): Future[Unit] = {
+    database.mongoDbDatabase.command(new Drop(collection.name))
+      .map(_ => ())
+      .recover { case _ => () }
+  }
+
   private def byId(id: BSONObjectID): BSONDocument = BSONDocument("_id" -> id)
 }
 
@@ -37,14 +47,10 @@ class Database(val mongoDbDatabase: DefaultDB, collectionNamePrefix: String = ""
   lazy val builds = new BuildTable(this, mongoDbDatabase(collectionNamePrefix + "builds"))
   lazy val outputs = new OutputTable(this, mongoDbDatabase(collectionNamePrefix + "outputs"))
 
-  def clear(): Future[Unit] =
-    Future.sequence(Seq(
-      mongoDbDatabase.command(new Drop(collectionNamePrefix + "users")),
-      mongoDbDatabase.command(new Drop(collectionNamePrefix + "userPasswords")),
-      mongoDbDatabase.command(new Drop(collectionNamePrefix + "projects")),
-      mongoDbDatabase.command(new Drop(collectionNamePrefix + "builds")),
-      mongoDbDatabase.command(new Drop(collectionNamePrefix + "outputs"))
-    )).map(_ => ()).recover { case _ => () }
+  def configure(): Future[Unit] = Future.sequence(tables.map(_.configure())).map(_ => ())
+  def clear(): Future[Unit] = Future.sequence(tables.map(_.clear())).map(_ => ())
+
+  private lazy val tables = Seq(users, userPasswords, projects, builds, outputs)
 }
 
 object Database {

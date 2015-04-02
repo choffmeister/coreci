@@ -33,6 +33,10 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
     Future.successful(obj.copy(updatedAt = now))
   }
 
+  override def configure(): Future[Unit] = {
+    collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending))).map(_ => ())
+  }
+
   def findByCanonicalName(cn: String): Future[Option[Project]] = queryOne(BSONDocument("canonicalName" -> cn))
 
   def getNextBuildNumber(projectId: BSONObjectID): Future[Option[Int]] = {
@@ -47,8 +51,6 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
         None
     }
   }
-
-  collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending)))
 }
 
 object ProjectBSONFormat {
