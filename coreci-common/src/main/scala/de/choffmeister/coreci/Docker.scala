@@ -8,8 +8,6 @@ import akka.http.model._
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
-import de.choffmeister.coreci.models.Output
-import org.slf4j.LoggerFactory
 import spray.json._
 
 import scala.concurrent._
@@ -30,13 +28,11 @@ case class ErrorStream(message: String) extends DockerStream
  * @param materializer The flow materializer
  */
 class Docker(host: String, port: Int)
-    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
-  val log = LoggerFactory.getLogger(getClass)
-
+    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   def build(tar: Source[ByteString], repository: String, tag: Option[String] = None): Future[Source[DockerStream]] = {
     val fullName = repository + tag.map("%2F" + _).getOrElse("")
     val entity = Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
-    log.debug("Building {} from Dockerfile", fullName)
+    log.debug(s"Building $fullName from Dockerfile")
 
     val req = HttpRequest(POST, Uri("/build?t=" + fullName), entity = entity)
     Source.single(req).via(Http().outgoingConnection(host, port).flow)

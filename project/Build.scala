@@ -33,6 +33,7 @@ object Build extends sbt.Build {
       "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-M3",
       "com.typesafe.akka" %% "akka-slf4j" % "2.3.7",
       "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
       "de.choffmeister" %% "auth-common" % "0.0.2",
       "io.spray" %% "spray-json" % "1.3.1",
       "org.kie.modules" % "org-apache-commons-compress" % "6.1.0.Final",
