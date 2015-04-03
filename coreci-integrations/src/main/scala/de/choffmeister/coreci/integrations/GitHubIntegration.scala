@@ -33,9 +33,9 @@ class GitHubIntegration(implicit system: ActorSystem, executor: ExecutionContext
           val after = payload.fields("after").toString()
           val docker = Docker.open(config.dockerWorkers)
           val archive = archiveTarball(archiveUrlTemplate, after)
-          val stream = archive.map(docker.build(_, fullName))
 
-          complete(OK)
+          // TODO: implement
+          ???
         }
       }
     }
