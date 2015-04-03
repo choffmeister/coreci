@@ -29,20 +29,10 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     canonicalName = s"project$i",
     title = s"Project $i",
     description = s"This is Project #$i",
-    dockerfile = i match {
-      case 1 => Dockerfile
-        .from("node", Some("0.10"))
-        .workdir("/")
-        .run("git clone https://github.com/choffmeister/gulp-reveal.git")
-        .workdir("/gulp-reveal")
-        .run("npm install -g gulp")
-        .run("npm install")
-        .run("gulp build")
-        .asString
-      case _ => Dockerfile
-        .from("ubuntu", Some("14.04"))
-        .run(s"echo this is project #$i")
-        .asString
+    dockerRepository = "node:0.10",
+    command = i match {
+      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: Nil
+      case _ => "uname" :: "-a" :: Nil
     })
 
   private def build(project: Project, i: Int) = Build(

@@ -13,7 +13,8 @@ case class Project(
   canonicalName: String,
   title: String,
   description: String,
-  dockerfile: String,
+  dockerRepository: String,
+  command: List[String],
   nextBuildNumber: Int = 1,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
@@ -64,7 +65,8 @@ object ProjectBSONFormat {
       canonicalName = doc.getAs[String]("canonicalName").get,
       title = doc.getAs[String]("title").get,
       description = doc.getAs[String]("description").get,
-      dockerfile = doc.getAs[String]("dockerfile").get,
+      dockerRepository = doc.getAs[String]("dockerRepository").get,
+      command = doc.getAs[List[String]]("command").get,
       nextBuildNumber = doc.getAs[Int]("nextBuildNumber").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
@@ -78,7 +80,8 @@ object ProjectBSONFormat {
       "canonicalName" -> obj.canonicalName,
       "title" -> obj.title,
       "description" -> obj.description,
-      "dockerfile" -> obj.dockerfile,
+      "dockerRepository" -> obj.dockerRepository,
+      "command" -> obj.command,
       "nextBuildNumber" -> obj.nextBuildNumber,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt

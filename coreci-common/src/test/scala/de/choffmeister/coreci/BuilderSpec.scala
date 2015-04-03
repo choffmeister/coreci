@@ -5,52 +5,60 @@ import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import reactivemongo.bson.BSONObjectID
 
-import scala.concurrent._
-import scala.concurrent.duration._
-
 class BuilderSpec extends Specification with NoTimeConversions {
   "Builder" should {
     "runs successful builds" in new TestActorSystem {
       TestDatabase { db =>
         val builder = new Builder(db)
-        val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
-          .run("echo hello world")
-
-        var project = await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+        var project = await(db.projects.insert(Project(
+          userId = BSONObjectID.generate,
+          canonicalName = "p",
+          title = "Project",
+          description = "This is a project",
+          dockerRepository = "node:0.10",
+          command = "uname" :: "-a" :: Nil)))
         val pending = await(db.builds.insert(Build(projectId = project.id)))
-        val finished = await(builder.run(pending, dockerfile))
+        val finished = await(builder.run(pending, project.dockerRepository, project.command))
+        val outputs = await(db.outputs.all)
+
         finished.status must beAnInstanceOf[Succeeded]
+        outputs.map(_.content).mkString must contain("GNU/Linux")
       }
     }
 
     "runs failing builds" in new TestActorSystem {
       TestDatabase { db =>
         val builder = new Builder(db)
-        val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
-          .run("unknowncommand")
-
-        var project = await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+        var project = await(db.projects.insert(Project(
+          userId = BSONObjectID.generate,
+          canonicalName = "p",
+          title = "Project",
+          description = "This is a project",
+          dockerRepository = "node:0.10",
+          command = "false" :: Nil)))
         val pending = await(db.builds.insert(Build(projectId = project.id)))
-        val finished = await(builder.run(pending, dockerfile))
-        finished.status must beAnInstanceOf[Failed]
-        finished.status.asInstanceOf[Failed].errorMessage must contain("unknowncommand")
+        val finished = await(builder.run(pending, project.dockerRepository, project.command))
 
-        val outputs = await(db.outputs.findByBuild(finished.id))
-        outputs(0).content === "Step 0 : FROM ubuntu:14.04\n"
-        outputs(2).content === "Step 1 : RUN unknowncommand\n"
+        finished.status must beAnInstanceOf[Failed]
+        finished.status.asInstanceOf[Failed].errorMessage must contain("Exit code 1")
       }
     }
 
     "runs erroring builds" in new TestActorSystem {
       TestDatabase { db =>
         val builder = new Builder(db)
-        val dockerfile = Dockerfile.parse("{}")
-
-        var project = await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+        var project = await(db.projects.insert(Project(
+          userId = BSONObjectID.generate,
+          canonicalName = "p",
+          title = "Project",
+          description = "This is a project",
+          dockerRepository = "unknownimage",
+          command = "uname" :: "-a" :: Nil)))
         val pending = await(db.builds.insert(Build(projectId = project.id)))
-        val finished = await(builder.run(pending, dockerfile))
+        val finished = await(builder.run(pending, project.dockerRepository, project.command))
+
         finished.status must beAnInstanceOf[Failed]
-        finished.status.asInstanceOf[Failed].errorMessage must contain("cannot continue")
+        finished.status.asInstanceOf[Failed].errorMessage must contain("Unknown error")
       }
     }
   }

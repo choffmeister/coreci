@@ -1,29 +1,20 @@
 package de.choffmeister.coreci
 
+import akka.stream.scaladsl._
 import org.specs2.mutable._
 import org.specs2.time.NoTimeConversions
-import spray.json.JsObject
 
 import scala.concurrent.duration._
 
 class DockerSpec extends Specification with NoTimeConversions {
   "Docker" should {
-    "builds image from dockerfile" in new TestActorSystem {
-      within(60.seconds) {
+    "create, start and attach to container" in new TestActorSystem {
+      within(5.seconds) {
         val docker = Docker.open(Config.load().dockerWorkers)
-        val dockerfile = Dockerfile.from("ubuntu", Some("14.04"))
-          .run("apt-get update")
-          .run("apt-get install --yes nginx")
-          .run("update-rc.d nginx disable")
-          .run("echo 'daemon off;' >> /etc/nginx/nginx.conf")
-          .cmd("/usr/sbin/nginx" :: Nil)
-          .expose(80)
-          .expose(443)
-        val future = docker.build(dockerfile.asTar, "coreci/nginx").flatMap { messages =>
-          messages.runFold(List.empty[DockerStream])(_ :+ _)
-        }
+        val command = "uname" :: "-a" :: Nil
+        val future = docker.runContainerWith("node:0.10", command, Sink.fold("")((acc, chunk) => acc + chunk._2.utf8String))
 
-        await(future)
+        await(future)._1 must contain("GNU/Linux")
       }
     }
   }

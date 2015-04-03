@@ -3,55 +3,42 @@ package de.choffmeister.coreci
 import akka.actor.ActorSystem
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
+import akka.util.ByteString
 import de.choffmeister.coreci.models._
 import reactivemongo.bson._
-import spray.json.JsString
+import spray.json._
 
 import scala.concurrent._
 
 class Builder(db: Database)
-    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
+    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   val config = Config.load()
   val docker = Docker.open(config.dockerWorkers)
 
-  def run(pending: Build, dockerfile: Dockerfile): Future[Build] = {
+  def run(pending: Build, repository: String, command: List[String]): Future[Build] = {
+    log.info(s"Running command $command on image $repository")
+
     val startedAt = now
-    val finished = for {
-      running <- db.builds.update(pending.copy(status = Running(startedAt)))
-      stream <- docker.build(dockerfile.asTar, running.id.stringify)
-      finished <- withIndex(stream).mapAsync[DockerStream] {
-        case (i, s@OutputStream(content)) =>
-          db.outputs.insert(Output(buildId = running.id, index = i, content = content)).map(_ => s)
-        case (i, s) =>
-          Future(s)
-      }.runFold(running) {
-        case (build@Build(_, _, _, Running(startedAt), _, _, _), ErrorStream(errorMessage)) =>
-          build.copy(status = Failed(startedAt, now, errorMessage))
-        case (build, _) =>
-          build
-      }.map {
-        case build@Build(_, _, _, Running(startedAt), _, _, _) =>
-          build.copy(status = Succeeded(startedAt, now))
-        case build =>
-          build
+    val outputSink = Flow[(Long, ByteString)]
+      .mapAsync { case (index, chunk) =>
+        db.outputs.insert(Output(buildId = pending.id, index = index, content = chunk.utf8String))
       }
-      saved <- db.builds.update(finished)
-    } yield saved
+      .toMat(Sink.foreach(_ => ()))(Keep.right)
 
-    finished.recoverWith {
-      case err =>
+    val finished = for {
+      started <- db.builds.update(pending.copy(status = Running(startedAt)))
+      (res, info) <- docker.runContainerWith(repository, command, outputSink)
+    } yield info.fields("State").asJsObject.fields("ExitCode").asInstanceOf[JsNumber].value.toInt match {
+      case 0 => pending.copy(status = Succeeded(startedAt, now))
+      case exitCode => pending.copy(status = Failed(startedAt, now, s"Exit code $exitCode"))
+    }
+
+    finished
+      .recover { case err =>
         val message = Option(err.getMessage).getOrElse("Unknown error")
-        db.builds.update(pending.copy(status = Failed(startedAt, now, message)))
-    }
-  }
-
-  private def withIndex[T, Mat](source: Source[T, Mat]): Source[(Long, T), Mat] = {
-    var index = 0L
-    source.map { item =>
-      val res = (index, item)
-      index = index + 1
-      res
-    }
+        pending.copy(status = Failed(startedAt, now, message))
+      }
+      .flatMap(db.builds.update)
   }
 
   private def now = BSONDateTime(System.currentTimeMillis)

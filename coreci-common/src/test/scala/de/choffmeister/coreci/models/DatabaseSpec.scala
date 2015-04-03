@@ -16,7 +16,7 @@ class DatabaseSpec extends Specification with NoTimeConversions{
     }
 
     entity("projects", _.projects, noPreparation) {
-      case Left((_, i)) => Project(userId = BSONObjectID.generate, canonicalName = s"project$i", title = s"Project $i", description = s"This is projects $i", dockerfile = "")
+      case Left((_, i)) => Project(userId = BSONObjectID.generate, canonicalName = s"project$i", title = s"Project $i", description = s"This is projects $i", dockerRepository = "", command = Nil)
       case Right(j) => j.copy(description = j.description + "-modified")
     }
 
@@ -34,7 +34,7 @@ class DatabaseSpec extends Specification with NoTimeConversions{
   private def noPreparation(db: Database): Unit = ()
 
   private def withProject(db: Database): Project =
-    await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerfile = "")))
+    await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerRepository = "", command = Nil)))
 
   private def await[T](f: => Future[T]): T =
     Await.result(f, 10.seconds)
