@@ -4,53 +4,92 @@ var React = require('react'),
     Console = require('../components/Console.jsx');
 
 var Build = React.createClass({
+  contextTypes: {
+    router: React.PropTypes.func
+  },
+
   statics: {
     fetchData: function (params) {
       return {
-        build: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber),
-        output: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber + '/output', true)
+        build: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber)
       };
     }
   },
 
+  getInitialState: function () {
+    return {
+      build: this.props.data['builds-show'].build,
+      output: {
+        count: 0,
+        content: ''
+      }
+    };
+  },
+
+  componentDidMount: function () {
+    this.updateConsoleOutput(false);
+  },
+
+  componentWillUnmount: function() {
+    window.clearTimeout(this.outputTimeout);
+  },
+
   render: function () {
-    var build = this.props.data['builds-show'].build;
-    var output = this.props.data['builds-show'].output;
-
-    var console;
-    if (output) {
-      console = <Console content={output}/>;
-    } else {
-      console = <span>No console output</span>;
-    }
-
     var error;
-    if (build.status.type == 'failed') {
+    if (this.state.build.status.type == 'failed') {
       error = (
-        <pre>{"ERROR\n\n" + build.status.errorMessage}</pre>
+        <pre>{"ERROR\n\n" + this.state.build.status.errorMessage}</pre>
       );
     }
 
     return (
       <div>
-        <h1>Build {build.projectCanonicalName} #{build.number}</h1>
+        <h1>Build {this.state.build.projectCanonicalName} #{this.state.build.number}</h1>
         {error}
         <dl>
           <dt>Status</dt>
-          <dd><span className={'build-' + build.status.type}/></dd>
+          <dd><span className={'build-' + this.state.build.status.type}/></dd>
           <dt>Created at</dt>
-          <dd><DateTime value={build.createdAt} kind="relative"/></dd>
+          <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>
-          <dd><DateTime value={build.updatedAt} kind="relative"/></dd>
+          <dd><DateTime value={this.state.build.updatedAt} kind="relative"/></dd>
           <dt>Started at</dt>
-          <dd><DateTime value={build.status.startedAt} kind="relative"/></dd>
+          <dd><DateTime value={this.state.build.status.startedAt} kind="relative"/></dd>
           <dt>Finished at</dt>
-          <dd><DateTime value={build.status.finishedAt} kind="relative"/></dd>
+          <dd><DateTime value={this.state.build.status.finishedAt} kind="relative"/></dd>
           <dt>Output</dt>
-          <dd>{console}</dd>
+          <dd>
+            <Console content={this.state.output.content} ref="console"/>
+          </dd>
         </dl>
       </div>
     );
+  },
+
+  updateConsoleOutput: function (scroll) {
+    var params = this.context.router.getCurrentParams();
+    var build = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber);
+    var output = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber + '/output?skip=' + this.state.output.count);
+
+    Promise.all2({ build: build, output: output })
+      .then(res => {
+        this.setState({
+          build: res.build,
+          output: {
+            count: this.state.output.count + res.output.count,
+            content: this.state.output.content + res.output.content
+          }
+        });
+
+        if (scroll) {
+          this.refs.console.getDOMNode().scrollIntoView(false);
+        }
+        if (['succeeded', 'failed'].indexOf(res.build.status.type) < 0) {
+          this.outputTimeout = window.setTimeout(function () {
+            this.updateConsoleOutput(true);
+          }.bind(this), 1000);
+        }
+      });
   }
 });
 

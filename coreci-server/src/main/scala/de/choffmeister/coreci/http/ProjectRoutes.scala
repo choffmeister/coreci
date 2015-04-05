@@ -5,6 +5,7 @@ import akka.http.server.Directives._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.models._
+import spray.json._
 
 import scala.concurrent.ExecutionContext
 
@@ -55,9 +56,27 @@ class ProjectRoutes(val database: Database)
                       complete(build)
                     }
                   } ~
-                  path("output") {
-                    get {
-                      complete(database.outputs.findByBuild(build.id).map(_.map(_.content).mkString))
+                  pathPrefix("output") {
+                    pathEnd {
+                      get {
+                        pageable { page =>
+                          complete {
+                            database.outputs.findByBuild(build.id, page).map { outputs =>
+                              JsObject(
+                                "count" -> JsNumber(outputs.length),
+                                "content" -> JsString(outputs.map(_.content).mkString)
+                              )
+                            }
+                          }
+                        }
+                      }
+                    } ~
+                    path("raw") {
+                      get {
+                        pageable { page =>
+                          complete(database.outputs.findByBuild(build.id, page).map(_.map(_.content).mkString))
+                        }
+                      }
                     }
                   }
                 case None =>
