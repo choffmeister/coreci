@@ -31,7 +31,7 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     description = s"This is Project #$i",
     dockerRepository = "node:0.10",
     command = i match {
-      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: Nil
+      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: "--no-spin" :: Nil
       case _ => "uname" :: "-a" :: Nil
     })
 
