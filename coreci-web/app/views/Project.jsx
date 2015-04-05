@@ -24,20 +24,33 @@ var Project = React.createClass({
   },
 
   render: function () {
-    var builds = this.props.data['projects-show'].builds.map(build => (
-      <tr key={build.id}>
-        <td className="column-icon"><span className={'build-' + build.status.type}/></td>
-        <td><Link to="builds-show" params={{projectCanonicalName: build.projectCanonicalName, buildNumber: build.number}}>#{build.number}</Link></td>
-        <td className="column-timestamp-relative"><DateTime value={build.updatedAt} kind="relative"/></td>
-      </tr>
-    ));
+    var builds = this.props.data['projects-show'].builds.map(build => {
+      var duration = build.status.finishedAt && build.status.startedAt ?
+        build.status.finishedAt - build.status.startedAt : undefined;
+
+      return (
+        <tr key={build.id}>
+          <td className="column-icon"><span className={'build-' + build.status.type}/></td>
+          <td><Link to="builds-show" params={{projectCanonicalName: build.projectCanonicalName, buildNumber: build.number}}>#{build.number}</Link></td>
+          <td className="column-timestamp-relative hidden-xs">
+            <span className="glyphicon glyphicon-calendar"/>&nbsp;
+            <DateTime value={build.updatedAt} kind="relative"/>
+          </td>
+          <td className="column-runtime-duration hidden-xs">
+            <span className="glyphicon glyphicon-time"/>&nbsp;
+            <DateTime value={duration} kind="duration"/>
+          </td>
+        </tr>
+      );
+    });
     var buildList = (
       <table className="table">
         <thead>
         <tr>
           <th className="column-icon"></th>
           <th>build</th>
-          <th className="column-timestamp-relative"></th>
+          <th className="column-timestamp-relative hidden-xs"></th>
+          <th className="column-runtime-duration hidden-xs"></th>
         </tr>
         </thead>
         <tbody>

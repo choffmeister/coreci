@@ -1,5 +1,6 @@
 var React = require('react'),
     moment = require('moment'),
+    momentDurationFormat = require('moment-duration-format'),
     SetIntervalMixin = require('../mixins/SetIntervalMixin');
 
 var DateTime = React.createClass({
@@ -11,7 +12,8 @@ var DateTime = React.createClass({
       React.PropTypes.instanceOf(Date)
     ]),
     kind: React.PropTypes.oneOf([
-      'relative'
+      'relative',
+      'duration'
     ]).isRequired
   },
 
@@ -22,7 +24,7 @@ var DateTime = React.createClass({
   render: function () {
     switch (this.props.kind) {
       case 'relative':
-        if (this.props.value) {
+        if (this.props.value !== undefined && this.props.value !== null) {
           var mom = moment(new Date(this.props.value));
 
           return (
@@ -34,6 +36,23 @@ var DateTime = React.createClass({
           );
         }
         break;
+      case 'duration':
+        if (this.props.value !== undefined && this.props.value !== null) {
+          var time = new Date(this.props.value).getTime();
+          var mom = moment.duration(time);
+          var format = time >= 60000 ?  'm [min] s [sec]' : 's [sec] S [ms]';
+
+          return (
+            <span {...this.props}>{mom.format(format)}</span>
+          );
+        } else {
+          return (
+            <span {...this.props}>-</span>
+          );
+        }
+        break;
+      default:
+        throw new Error('Unkown date time kind ' + this.props.kind);
     }
   }
 });

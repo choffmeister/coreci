@@ -35,12 +35,11 @@ var Build = React.createClass({
   },
 
   render: function () {
-    var error;
-    if (this.state.build.status.type == 'failed') {
-      error = (
-        <pre>{"ERROR\n\n" + this.state.build.status.errorMessage}</pre>
-      );
-    }
+    var error = this.state.build.status.type == 'failed' ?
+      <pre>{"ERROR\n\n" + this.state.build.status.errorMessage}</pre> : undefined;
+
+    var duration = this.state.build.status.finishedAt && this.state.build.status.startedAt ?
+      this.state.build.status.finishedAt - this.state.build.status.startedAt : undefined;
 
     return (
       <div>
@@ -56,7 +55,15 @@ var Build = React.createClass({
           <dt>Started at</dt>
           <dd><DateTime value={this.state.build.status.startedAt} kind="relative"/></dd>
           <dt>Finished at</dt>
-          <dd><DateTime value={this.state.build.status.finishedAt} kind="relative"/></dd>
+          <dd>
+            <span className="glyphicon glyphicon-calendar"/>&nbsp;
+            <DateTime value={this.state.build.status.finishedAt} kind="relative"/>
+          </dd>
+          <dt>Duration</dt>
+          <dd>
+            <span className="glyphicon glyphicon-time"/>&nbsp;
+            <DateTime value={duration} kind="duration"/>
+          </dd>
           <dt>Output</dt>
           <dd>
             <Console content={this.state.output.content} ref="console"/>
