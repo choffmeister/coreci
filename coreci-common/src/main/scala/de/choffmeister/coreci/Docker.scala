@@ -26,7 +26,8 @@ class Docker(host: String, port: Int)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   def runContainerWith[T](
       repository: String,
-      command: List[String],sink: Sink[(Long, ByteString), Future[T]]): Future[(T, JsObject)] = {
+      command: List[String],
+      sink: Sink[(Long, ByteString), Future[T]]): Future[(T, JsObject)] = {
     createContainer(repository, command).flatMap { id =>
       val future = for {
         s <- attachToContainer(id)
