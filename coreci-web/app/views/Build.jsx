@@ -19,10 +19,7 @@ var Build = React.createClass({
   getInitialState: function () {
     return {
       build: this.props.data['builds-show'].build,
-      output: {
-        count: 0,
-        content: ''
-      }
+      output: ''
     };
   },
 
@@ -66,7 +63,7 @@ var Build = React.createClass({
           </dd>
           <dt>Output</dt>
           <dd>
-            <Console content={this.state.output.content} ref="console"/>
+            <Console content={this.state.output} ref="console"/>
           </dd>
         </dl>
       </div>
@@ -76,16 +73,13 @@ var Build = React.createClass({
   updateConsoleOutput: function (scroll) {
     var params = this.context.router.getCurrentParams();
     var build = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber);
-    var output = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber + '/output?skip=' + this.state.output.count);
+    var output = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber + '/output?skip=' + this.state.output.length, true);
 
     Promise.all2({ build: build, output: output })
       .then(res => {
         this.setState({
           build: res.build,
-          output: {
-            count: this.state.output.count + res.output.count,
-            content: this.state.output.content + res.output.content
-          }
+          output: res.output
         });
 
         if (scroll) {

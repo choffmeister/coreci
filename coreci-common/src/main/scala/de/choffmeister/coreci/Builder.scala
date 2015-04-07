@@ -9,6 +9,7 @@ import reactivemongo.bson._
 import spray.json._
 
 import scala.concurrent._
+import scala.concurrent.duration._
 
 class Builder(db: Database)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
@@ -20,8 +21,12 @@ class Builder(db: Database)
 
     val startedAt = now
     val outputSink = Flow[(Long, ByteString)]
-      .mapAsync { case (index, chunk) =>
-        db.outputs.insert(Output(buildId = pending.id, index = index, content = chunk.utf8String))
+      .groupedWithin(10000, 1.seconds)
+      .map { chunks =>
+        (chunks.head._1, chunks.map(_._2).foldLeft(ByteString.empty)(_ ++ _).utf8String)
+      }
+      .mapAsync { case (index, content) =>
+        db.outputs.insert(Output(buildId = pending.id, index = index, content = content))
       }
       .toMat(Sink.foreach(_ => ()))(Keep.right)
 

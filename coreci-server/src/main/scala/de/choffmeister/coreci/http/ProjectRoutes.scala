@@ -56,25 +56,13 @@ class ProjectRoutes(val database: Database)
                       complete(build)
                     }
                   } ~
-                  pathPrefix("output") {
-                    pathEnd {
-                      get {
-                        pageable { page =>
-                          complete {
-                            database.outputs.findByBuild(build.id, page).map { outputs =>
-                              JsObject(
-                                "count" -> JsNumber(outputs.length),
-                                "content" -> JsString(outputs.map(_.content).mkString)
-                              )
-                            }
-                          }
-                        }
-                      }
-                    } ~
-                    path("raw") {
-                      get {
-                        pageable { page =>
-                          complete(database.outputs.findByBuild(build.id, page).map(_.map(_.content).mkString))
+                  path("output") {
+                    get {
+                      pageable { page =>
+                        complete {
+                          database.outputs.findByBuild(build.id)
+                            .map(_.foldLeft("")(_ + _.content))
+                            .map(_.drop(page._1.getOrElse(0)).take(page._2.getOrElse(Int.MaxValue)))
                         }
                       }
                     }

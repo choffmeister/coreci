@@ -27,8 +27,8 @@ class OutputTable(database: Database, collection: BSONCollection)(implicit execu
     collection.indexesManager.ensure(Index(List("buildId" -> IndexType.Ascending, "index" -> IndexType.Ascending))).map(_ => ())
   }
 
-  def findByBuild(buildId: BSONObjectID, page: (Option[Int], Option[Int])): Future[List[Output]] =
-    query(BSONDocument("buildId" -> buildId), sort = BSONDocument("index" -> 1), page = page)
+  def findByBuild(buildId: BSONObjectID): Future[List[Output]] =
+    query(BSONDocument("buildId" -> buildId), sort = BSONDocument("index" -> 1))
 }
 
 object OutputBSONFormat {
