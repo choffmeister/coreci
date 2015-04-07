@@ -42,17 +42,6 @@ object Build extends sbt.Build {
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-common")
 
-  lazy val integrations = (project in file("coreci-integrations"))
-    .settings(commonSettings: _*)
-    .settings(libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M5",
-      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M5",
-      "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
-      "org.specs2" %% "specs2" % "2.4.1" % "test"))
-    .settings(serverPackSettings: _*)
-    .settings(name := "coreci-integrations")
-    .dependsOn(common % "test->test;compile->compile")
-
   lazy val server = (project in file("coreci-server"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
@@ -62,7 +51,7 @@ object Build extends sbt.Build {
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")
-    .dependsOn(common % "test->test;compile->compile", integrations % "test->test;compile->compile")
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val web = (project in file("coreci-web"))
     .settings(commonSettings: _*)
@@ -81,5 +70,5 @@ object Build extends sbt.Build {
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
       distDir
     })
-    .aggregate(common, integrations, server, web)
+    .aggregate(common, server, web)
 }

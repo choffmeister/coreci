@@ -15,13 +15,11 @@ class ApiRoutes(val database: Database)
   lazy val authRoutes = new AuthRoutes(database)
   lazy val projectRoutes = new ProjectRoutes(database)
   lazy val buildRoutes = new BuildRoutes(database)
-  lazy val integrationRoutes = new IntegrationRoutes(database)
 
   lazy val routes = filterHttpChallengesByExtensionHeader {
     pathPrefix("auth")(authRoutes.routes) ~
     pathPrefix("projects")(projectRoutes.routes) ~
-    pathPrefix("builds")(buildRoutes.routes) ~
-    pathPrefix("integrations")(integrationRoutes.routes)
+    pathPrefix("builds")(buildRoutes.routes)
   }
 
   def filterHttpChallengesByExtensionHeader: Directive0 =

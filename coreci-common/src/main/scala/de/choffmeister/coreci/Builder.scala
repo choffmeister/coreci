@@ -9,7 +9,6 @@ import reactivemongo.bson._
 import spray.json._
 
 import scala.concurrent._
-import scala.concurrent.duration._
 
 class Builder(db: Database)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
