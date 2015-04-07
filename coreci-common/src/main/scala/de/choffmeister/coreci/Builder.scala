@@ -21,7 +21,7 @@ class Builder(db: Database)
 
     val startedAt = now
     val outputSink = Flow[(Long, ByteString)]
-      .groupedWithin(10000, 1.seconds)
+      .groupedWithin(config.builderOutputGroupMaxCount, config.builderOutputGroupMaxDuration)
       .map { chunks =>
         (chunks.head._1, chunks.map(_._2).foldLeft(ByteString.empty)(_ ++ _).utf8String)
       }
