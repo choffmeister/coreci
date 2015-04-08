@@ -79,7 +79,7 @@ var Build = React.createClass({
       .then(res => {
         this.setState({
           build: res.build,
-          output: res.output
+          output: this.state.output + res.output
         });
 
         if (scroll) {
