@@ -24,9 +24,9 @@ class Builder(db: Database)
       .map { chunks =>
         (chunks.head._1, chunks.map(_._2).foldLeft(ByteString.empty)(_ ++ _).utf8String)
       }
-      .mapAsync(1, { case (index, content) =>
+      .mapAsync(1) { case (index, content) =>
         db.outputs.insert(Output(buildId = pending.id, index = index, content = content))
-      })
+      }
       .toMat(Sink.foreach(_ => ()))(Keep.right)
 
     val finished = for {

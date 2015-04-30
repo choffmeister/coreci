@@ -26,7 +26,7 @@ class Server(config: Config, serverConfig: ServerConfig, database: Database) ext
       pathPrefixTest(!"api")(staticContentRoutes.routes)
 
     // TODO make parallelism configurable
-    binding.runForeach(_.handleWith(Flow[HttpRequest].mapAsync(32, Route.asyncHandler(routes))))
+    binding.runForeach(_.handleWith(Flow[HttpRequest].mapAsync(32)(Route.asyncHandler(routes))))
   }
 
   def shutdown(): Unit = {
