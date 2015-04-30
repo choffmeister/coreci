@@ -1,8 +1,8 @@
 package de.choffmeister.coreci.http
 
 import akka.actor.ActorSystem
-import akka.http.server.Directives._
-import akka.http.server._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.managers._

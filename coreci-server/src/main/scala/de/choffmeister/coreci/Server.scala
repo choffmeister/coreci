@@ -1,10 +1,10 @@
 package de.choffmeister.coreci
 
 import akka.actor._
-import akka.http.Http
-import akka.http.model.HttpRequest
-import akka.http.server.Directives._
-import akka.http.server.Route
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.stream.ActorFlowMaterializer
 import akka.stream.scaladsl.Flow
 import de.choffmeister.coreci.http._
@@ -25,7 +25,8 @@ class Server(config: Config, serverConfig: ServerConfig, database: Database) ext
       pathPrefix("api")(apiRoutes.routes) ~
       pathPrefixTest(!"api")(staticContentRoutes.routes)
 
-    binding.runForeach(_.handleWith(Flow[HttpRequest].mapAsync(Route.asyncHandler(routes))))
+    // TODO make parallelism configurable
+    binding.runForeach(_.handleWith(Flow[HttpRequest].mapAsync(32, Route.asyncHandler(routes))))
   }
 
   def shutdown(): Unit = {

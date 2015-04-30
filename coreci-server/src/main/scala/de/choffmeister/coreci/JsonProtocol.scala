@@ -2,7 +2,7 @@ package de.choffmeister.coreci
 
 import java.util.Date
 
-import akka.http.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import de.choffmeister.coreci.models._
 import reactivemongo.bson._
 import spray.json._

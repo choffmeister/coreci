@@ -1,9 +1,9 @@
 package de.choffmeister.coreci
 
 import akka.actor._
-import akka.http.Http
-import akka.http.model.HttpMethods._
-import akka.http.model._
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.HttpMethods._
+import akka.http.scaladsl.model._
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
@@ -72,7 +72,7 @@ class Docker(host: String, port: Int)
     request(POST, Uri(s"/containers/$id/start")).flatMap(drainResponseBody)
   }
 
-  def attachToContainer(id: String): Future[Source[ByteString, Unit]] = {
+  def attachToContainer(id: String): Future[Source[ByteString, Any]] = {
     request(POST, Uri(s"/containers/$id/attach?logs=true&stream=true&stdout=true&stderr=true")).map(_.entity.dataBytes)
   }
 

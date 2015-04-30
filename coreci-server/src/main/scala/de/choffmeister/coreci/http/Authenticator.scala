@@ -1,7 +1,7 @@
 package de.choffmeister.coreci.http
 
-import akka.http.model.headers._
-import akka.http.server.directives.AuthenticationDirectives._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.directives.AuthenticationDirectives._
 import de.choffmeister.auth.common.JsonWebToken
 import de.choffmeister.auth.common.JsonWebToken._
 
