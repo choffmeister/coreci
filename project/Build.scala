@@ -26,7 +26,7 @@ object Build extends sbt.Build {
   lazy val common = (project in file("coreci-common"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-      "ch.qos.logback" % "logback-classic" % "1.0.13",
+      "ch.qos.logback" % "logback-classic" % "1.1.3",
       "com.typesafe" % "config" % "1.2.0",
       "com.typesafe.akka" %% "akka-actor" % "2.3.10",
       "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-RC1",
@@ -37,6 +37,7 @@ object Build extends sbt.Build {
       "de.choffmeister" %% "auth-common" % "0.0.2",
       "io.spray" %% "spray-json" % "1.3.1",
       "org.apache.commons" % "commons-compress" % "1.9",
+      "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.2",
       "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
