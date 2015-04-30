@@ -2,6 +2,7 @@ package de.choffmeister.coreci
 
 import com.typesafe.config.{Config => TypesafeConfig, ConfigFactory => TypesafeConfigFactory}
 
+import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 
 case class Config(
@@ -12,6 +13,7 @@ case class Config(
   passwordHashAlgorithmConfig: List[String],
   builderOutputGroupMaxCount: Int,
   builderOutputGroupMaxDuration: FiniteDuration,
+  pluginClassNames: List[String],
   raw: TypesafeConfig)
 
 object Config {
@@ -28,6 +30,7 @@ object Config {
       passwordHashAlgorithmConfig = rawCoreci.getString("passwords.hash-algorithm").split(":", -1).toList.tail,
       builderOutputGroupMaxCount = rawCoreci.getInt("builder.output-group.max-count"),
       builderOutputGroupMaxDuration = rawCoreci.getFiniteDuration("builder.output-group.max-count"),
+      pluginClassNames = rawCoreci.getStringList("plugins").asScala.toList,
       raw = raw
     )
   }

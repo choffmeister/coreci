@@ -19,7 +19,8 @@ class Server(config: Config, serverConfig: ServerConfig, database: Database) ext
 
   def startup(): Unit = {
     val binding = Http(system).bind(interface = serverConfig.httpInterface, port = serverConfig.httpPort)
-    val apiRoutes = new ApiRoutes(database)
+    val plugins = Plugins.init(config)
+    val apiRoutes = new ApiRoutes(database, plugins)
     val staticContentRoutes = new StaticContentRoutes(serverConfig.webDir)
     val routes =
       pathPrefix("api")(apiRoutes.routes) ~

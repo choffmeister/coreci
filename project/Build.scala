@@ -30,6 +30,7 @@ object Build extends sbt.Build {
       "com.typesafe" % "config" % "1.2.0",
       "com.typesafe.akka" %% "akka-actor" % "2.3.10",
       "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-RC2",
+      "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
       "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-RC2",
       "com.typesafe.akka" %% "akka-slf4j" % "2.3.10",
       "com.typesafe.akka" %% "akka-testkit" % "2.3.10" % "test",
@@ -43,16 +44,24 @@ object Build extends sbt.Build {
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-common")
 
+  lazy val plugins = (project in file("coreci-plugins"))
+    .settings(commonSettings: _*)
+    .settings(libraryDependencies ++= Seq(
+      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-RC2",
+      "org.specs2" %% "specs2" % "2.4.1" % "test"))
+    .settings(serverPackSettings: _*)
+    .settings(name := "coreci-plugins")
+    .dependsOn(common % "test->test;compile->compile")
+
   lazy val server = (project in file("coreci-server"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
       "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-RC2",
       "org.rogach" %% "scallop" % "0.9.5",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")
-    .dependsOn(common % "test->test;compile->compile")
+    .dependsOn(common % "test->test;compile->compile", plugins)
 
   lazy val web = (project in file("coreci-web"))
     .settings(commonSettings: _*)
@@ -71,5 +80,5 @@ object Build extends sbt.Build {
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
       distDir
     })
-    .aggregate(common, server, web)
+    .aggregate(common, plugins, server, web)
 }
