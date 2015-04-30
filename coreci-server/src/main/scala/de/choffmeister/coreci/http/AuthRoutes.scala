@@ -3,8 +3,8 @@ package de.choffmeister.coreci.http
 import java.util.Date
 
 import akka.actor._
-import akka.http.server.Directives._
-import akka.http.server.Route
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.stream.FlowMaterializer
 import de.choffmeister.auth.common._
 import de.choffmeister.coreci.models._

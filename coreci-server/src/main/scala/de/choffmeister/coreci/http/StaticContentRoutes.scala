@@ -3,7 +3,7 @@ package de.choffmeister.coreci.http
 import java.io.File
 
 import akka.actor._
-import akka.http.server.Directives._
+import akka.http.scaladsl.server.Directives._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
 

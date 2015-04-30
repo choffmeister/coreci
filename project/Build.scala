@@ -28,15 +28,15 @@ object Build extends sbt.Build {
     .settings(libraryDependencies ++= Seq(
       "ch.qos.logback" % "logback-classic" % "1.0.13",
       "com.typesafe" % "config" % "1.2.0",
-      "com.typesafe.akka" %% "akka-actor" % "2.3.7",
-      "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-M5",
-      "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-M5",
-      "com.typesafe.akka" %% "akka-slf4j" % "2.3.7",
-      "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
+      "com.typesafe.akka" %% "akka-actor" % "2.3.10",
+      "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-RC1",
+      "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-RC1",
+      "com.typesafe.akka" %% "akka-slf4j" % "2.3.10",
+      "com.typesafe.akka" %% "akka-testkit" % "2.3.10" % "test",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
       "de.choffmeister" %% "auth-common" % "0.0.2",
       "io.spray" %% "spray-json" % "1.3.1",
-      "org.kie.modules" % "org-apache-commons-compress" % "6.1.0.Final",
+      "org.apache.commons" % "commons-compress" % "1.9",
       "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
@@ -45,8 +45,8 @@ object Build extends sbt.Build {
   lazy val server = (project in file("coreci-server"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-      "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M5",
-      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M5",
+      "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC1",
+      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-RC1",
       "org.rogach" %% "scallop" % "0.9.5",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
