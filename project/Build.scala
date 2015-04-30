@@ -36,7 +36,7 @@ object Build extends sbt.Build {
       "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
       "de.choffmeister" %% "auth-common" % "0.0.2",
       "io.spray" %% "spray-json" % "1.3.1",
-      "org.kie.modules" % "org-apache-commons-compress" % "6.1.0.Final",
+      "org.apache.commons" % "commons-compress" % "1.9",
       "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
