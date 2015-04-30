@@ -6,20 +6,31 @@ import akka.stream.FlowMaterializer
 
 import scala.concurrent.ExecutionContext
 
-trait Plugin {
+abstract class Plugin(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) {
   val name: String
   val version: String
 
-  def routes(implicit executor: ExecutionContext, materializer: FlowMaterializer): Route
+  def routes: Route
 }
 
-object Plugins {
-  def init(config: Config): Map[String, Plugin] = {
-    val ps = config.pluginClassNames.map { cn =>
-      val clazz = getClass.getClassLoader.loadClass(cn).asSubclass(classOf[Plugin])
-      clazz.newInstance()
-    }
+object Plugins extends Logger {
+  def init(config: Config)(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer): Map[String, Plugin] = {
+    val plugins =
+      config.pluginClassNames.map { cn =>
+        log.info(s"Initializing plugin $cn")
+        try {
+          val clazz = getClass.getClassLoader.loadClass(cn).asSubclass(classOf[Plugin])
+          val ctor = clazz.getDeclaredConstructor(classOf[ActorSystem], classOf[ExecutionContext], classOf[FlowMaterializer])
+          Some(ctor.newInstance(system, executor, materializer))
+        } catch  {
+          case ex: Exception =>
+            log.error(s"Error while initializing plugin $cn", ex)
+            None
+        }
+      }
+      .filter(_.isDefined)
+      .map(_.get)
 
-    (ps.map(_.name) zip ps).toMap
+    (plugins.map(_.name) zip plugins).toMap
   }
 }
