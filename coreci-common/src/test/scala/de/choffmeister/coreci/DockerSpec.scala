@@ -12,7 +12,7 @@ class DockerSpec extends Specification with NoTimeConversions {
       within(5.seconds) {
         val docker = Docker.open(Config.load().dockerWorkers)
         val command = "uname" :: "-a" :: Nil
-        val future = docker.runContainerWith("node:0.10", command, Sink.fold("")((acc, chunk) => acc + chunk._2.utf8String))
+        val future = docker.runContainerWith("busybox:latest", command, Sink.fold("")((acc, chunk) => acc + chunk._2.utf8String))
 
         await(future)._1 must contain("GNU/Linux")
       }
