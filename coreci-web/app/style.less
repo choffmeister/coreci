@@ -1,0 +1,71 @@
+@import "../node_modules/bootstrap/less/bootstrap";
+@icon-font-path: "/app/fonts/";
+
+.container {
+  overflow-x: hidden;
+}
+
+.column-icon {
+  box-sizing: content-box;
+  width: 16px;
+}
+
+.column-timestamp-relative {
+  box-sizing: content-box;
+  width: 140px;
+}
+
+.column-runtime-duration {
+  box-sizing: content-box;
+  width: 140px;
+}
+
+.build-icon(@r, @g, @b) {
+  .glyphicon;
+  color: rgb(@r, @g, @b);
+}
+
+.build-pending {
+  .build-icon(154, 151, 153);
+  .glyphicon-option-horizontal;
+}
+
+.build-running {
+  .build-icon(240, 174, 25);
+  .glyphicon-refresh;
+}
+
+.build-succeeded {
+  .build-icon(92, 184, 92);
+  .glyphicon-ok;
+}
+
+.build-failed {
+  .build-icon(184, 63, 44);
+  .glyphicon-remove;
+}
+
+.console-output {
+  // iTerms2 Afterglow colors
+  color: rgba(208, 208, 208, 1.0);
+  background-color: rgba(44, 44, 44, 1.0);
+
+  // TODO add correct colors
+  &-fg-black   { color: rgba( 21,  21,  21, 1.0); } // ansi 0
+  &-fg-red     { color: rgba(172,  65,  66, 1.0); } // ansi 1
+  &-fg-green   { color: rgba(126, 142,  80, 1.0); } // ansi 2
+  &-fg-yellow  { color: rgba(229, 181, 103, 1.0); } // ansi 3
+  &-fg-blue    { color: rgba(108, 153, 186, 1.0); } // ansi 4
+  &-fg-magenta { color: rgba(158,  78, 133, 1.0); } // ansi 5
+  &-fg-cyan    { color: rgba(125, 213, 207, 1.0); } // ansi 6
+  &-fg-white   { color: rgba(208, 208, 208, 1.0); } // ansi 7
+
+  &-bg-black   { background-color: rgba( 80,  80,  80, 1.0); } // ansi 8
+  &-bg-red     { background-color: rgba(172,  65,  66, 1.0); } // ansi 9
+  &-bg-green   { background-color: rgba(126, 142,  80, 1.0); } // ansi 10
+  &-bg-yellow  { background-color: rgba(229, 181, 103, 1.0); } // ansi 11
+  &-bg-blue    { background-color: rgba(108, 153, 186, 1.0); } // ansi 12
+  &-bg-magenta { background-color: rgba(158,  78, 133, 1.0); } // ansi 13
+  &-bg-cyan    { background-color: rgba(125, 213, 207, 1.0); } // ansi 14
+  &-bg-white   { background-color: rgba(245, 245, 245, 1.0); } // ansi 15
+}

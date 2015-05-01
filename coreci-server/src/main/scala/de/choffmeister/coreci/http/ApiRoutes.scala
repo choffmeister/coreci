@@ -1,46 +1,42 @@
 package de.choffmeister.coreci.http
 
 import akka.actor._
-import akka.http.model._
-import akka.http.server.Route
-import akka.http.server.Directives._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 import akka.stream.FlowMaterializer
-import de.choffmeister.coreci._
 import de.choffmeister.coreci.models._
-import spray.json.RootJsonFormat
 
 import scala.concurrent.ExecutionContext
 
-class ApiRoutes(database: Database)(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends JsonProtocol {
-  lazy val routes =
-    crud("users", database.users)
+class ApiRoutes(val database: Database)
+    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
+  lazy val authRoutes = new AuthRoutes(database)
+  lazy val projectRoutes = new ProjectRoutes(database)
+  lazy val buildRoutes = new BuildRoutes(database)
 
-  private def crud[T <: BaseModel](name: String, table: Table[T])(implicit jsonFormat: RootJsonFormat[T]): Route =
-    pathPrefix(name) {
-      pathEnd {
-        get {
-          complete(table.all)
-        } ~
-        post {
-          entity(as[T]) { obj =>
-            complete(table.insert(obj))
-          }
-        }
-      } ~
-      path(BSONObjectIDSegment) { id =>
-        get {
-          rejectEmptyResponse {
-            complete(table.find(id))
-          }
-        } ~
-        put {
-          entity(as[T]) { obj =>
-            complete(table.update(obj))
-          }
-        } ~
-        delete {
-          complete(table.delete(id).map(_ => id.stringify))
-        }
+  lazy val routes = filterHttpChallengesByExtensionHeader {
+    pathPrefix("auth")(authRoutes.routes) ~
+    pathPrefix("projects")(projectRoutes.routes) ~
+    pathPrefix("builds")(buildRoutes.routes)
+  }
+
+  def filterHttpChallengesByExtensionHeader: Directive0 =
+    extract(ctx => ctx.request.headers).flatMap { headers =>
+      headers.find(_.lowercaseName == "x-www-authenticate-filter") match {
+        case Some(HttpHeader(_, value)) =>
+          val filter = value.split(" ").filter(_ != "").map(_.toLowerCase).toSeq
+          filterHttpChallenges(c => filter.contains(c.scheme.toLowerCase))
+        case _ =>
+          pass
       }
     }
+
+  def filterHttpChallenges(cond: HttpChallenge => Boolean): Directive0 = mapRejections { rejections =>
+    rejections.filter {
+      case AuthenticationFailedRejection(c, ch) => cond(ch)
+      case rejection => true
+    }
+  }
 }

@@ -1,8 +1,8 @@
 package de.choffmeister.coreci.http
 
-import akka.http.model.Uri.Path
-import akka.http.server.PathMatcher.{ Matched, Unmatched, Matching }
-import akka.http.server.PathMatcher1
+import akka.http.scaladsl.model.Uri.Path
+import akka.http.scaladsl.server.PathMatcher.{Matched, Matching, Unmatched}
+import akka.http.scaladsl.server.PathMatcher1
 import reactivemongo.bson.BSONObjectID
 
 import scala.util.Success

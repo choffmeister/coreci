@@ -2,7 +2,7 @@ package de.choffmeister.coreci
 
 import java.util.Date
 
-import akka.http.marshallers.sprayjson.SprayJsonSupport
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import de.choffmeister.coreci.models._
 import reactivemongo.bson._
 import spray.json._
@@ -42,5 +42,36 @@ trait JsonProtocol extends DefaultJsonProtocol
     with DateJsonProtocol
     with BSONJsonProtocol
     with SprayJsonSupport {
+  implicit object BuildStatusFormat extends JsonFormat[BuildStatus] {
+    def write(status: BuildStatus): JsValue = status match {
+      case Pending =>
+        JsObject(
+          "type" -> JsString("pending"))
+      case Running(startedAt) =>
+        JsObject(
+          "type" -> JsString("running"),
+          "startedAt" -> BSONDateTimeFormat.write(startedAt))
+      case Succeeded(startedAt, finishedAt) =>
+        JsObject(
+          "type" ->JsString("succeeded"),
+          "startedAt" -> BSONDateTimeFormat.write(startedAt),
+          "finishedAt" -> BSONDateTimeFormat.write(finishedAt))
+      case Failed(startedAt, finishedAt, errorMessage) =>
+        JsObject(
+          "type" -> JsString("failed"),
+          "startedAt" -> BSONDateTimeFormat.write(startedAt),
+          "finishedAt" -> BSONDateTimeFormat.write(finishedAt),
+          "errorMessage" -> JsString(errorMessage))
+    }
+
+    def read(value: JsValue): BuildStatus =
+      value match {
+        case _ => deserializationError(s"Build status expected. Got '$value'")
+      }
+  }
+
   implicit val userFormat = jsonFormat5(User)
+  implicit val projectFormat = jsonFormat10(Project)
+  implicit val buildFormat = jsonFormat7(Build)
+  implicit val outputFormat = jsonFormat5(Output)
 }

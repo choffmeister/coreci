@@ -12,34 +12,47 @@ object Build extends sbt.Build {
 
   lazy val coordinateSettings = Seq(
     organization := "de.choffmeister",
-    version := "0.0.0")
+    version := "0.0.1")
 
   lazy val resolverSettings = Seq(
-    resolvers += Resolver.sonatypeRepo("snapshots"),
     resolvers += "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/")
 
   lazy val commonSettings = Defaults.coreDefaultSettings ++ coordinateSettings ++ buildSettings ++ resolverSettings
 
   lazy val serverPackSettings = packSettings ++ Seq(
-    packMain := Map("server" -> "de.choffmeister.coreci.Server"),
-    packExtraClasspath := Map("server" -> Seq("${PROG_HOME}/conf")))
+    packMain := Map("coreci" -> "de.choffmeister.coreci.Application"),
+    packExtraClasspath := Map("coreci" -> Seq("${PROG_HOME}/conf")))
+
+  lazy val common = (project in file("coreci-common"))
+    .settings(commonSettings: _*)
+    .settings(libraryDependencies ++= Seq(
+      "ch.qos.logback" % "logback-classic" % "1.1.3",
+      "com.typesafe" % "config" % "1.2.0",
+      "com.typesafe.akka" %% "akka-actor" % "2.3.10",
+      "com.typesafe.akka" %% "akka-http-core-experimental" % "1.0-RC2",
+      "com.typesafe.akka" %% "akka-stream-experimental" % "1.0-RC2",
+      "com.typesafe.akka" %% "akka-slf4j" % "2.3.10",
+      "com.typesafe.akka" %% "akka-testkit" % "2.3.10" % "test",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
+      "de.choffmeister" %% "auth-common" % "0.0.2",
+      "io.spray" %% "spray-json" % "1.3.1",
+      "org.apache.commons" % "commons-compress" % "1.9",
+      "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.2",
+      "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
+      "org.specs2" %% "specs2" % "2.4.1" % "test"))
+    .settings(serverPackSettings: _*)
+    .settings(name := "coreci-common")
 
   lazy val server = (project in file("coreci-server"))
     .settings(commonSettings: _*)
     .settings(libraryDependencies ++= Seq(
-      "ch.qos.logback" % "logback-classic" % "1.1.2",
-      "com.typesafe" % "config" % "1.2.0",
-      "com.typesafe.akka" %% "akka-actor" % "2.3.7",
-      "com.typesafe.akka" %% "akka-http-experimental" % "1.0-M3",
-      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-M3",
-      "com.typesafe.akka" %% "akka-slf4j" % "2.3.7",
-      "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % "test",
-      "de.choffmeister" %% "auth-common" % "0.0.1",
-      "org.almoehi" %% "reactive-docker" % "0.1-SNAPSHOT",
-      "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
+      "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
+      "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-RC2",
+      "org.rogach" %% "scallop" % "0.9.5",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")
+    .dependsOn(common % "test->test;compile->compile")
 
   lazy val web = (project in file("coreci-web"))
     .settings(commonSettings: _*)
@@ -58,5 +71,5 @@ object Build extends sbt.Build {
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
       distDir
     })
-    .aggregate(server, web)
+    .aggregate(common, server, web)
 }
