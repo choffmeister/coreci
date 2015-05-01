@@ -15,7 +15,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "node:0.10",
+          dockerRepository = "busybox:latest",
           command = "uname" :: "-a" :: Nil)))
         val pending = await(db.builds.insert(Build(projectId = project.id)))
         val finished = await(builder.run(pending, project.dockerRepository, project.command))
@@ -34,7 +34,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "node:0.10",
+          dockerRepository = "busybox:latest",
           command = "false" :: Nil)))
         val pending = await(db.builds.insert(Build(projectId = project.id)))
         val finished = await(builder.run(pending, project.dockerRepository, project.command))
