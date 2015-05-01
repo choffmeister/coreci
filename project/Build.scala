@@ -12,7 +12,7 @@ object Build extends sbt.Build {
 
   lazy val coordinateSettings = Seq(
     organization := "de.choffmeister",
-    version := "0.0.1-SNAPSHOT")
+    version := "0.0.1")
 
   lazy val resolverSettings = Seq(
     resolvers += "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/")
