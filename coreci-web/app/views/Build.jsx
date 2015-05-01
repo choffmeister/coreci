@@ -32,8 +32,8 @@ var Build = React.createClass({
   },
 
   render: function () {
-    var error = this.state.build.status.type == 'failed' ?
-      <pre>{"ERROR\n\n" + this.state.build.status.errorMessage}</pre> : undefined;
+    var message = this.state.build.status.type == 'failed' ?
+      this.state.build.status.errorMessage : '-';
 
     var duration = this.state.build.status.finishedAt && this.state.build.status.startedAt ?
       this.state.build.status.finishedAt - this.state.build.status.startedAt : undefined;
@@ -41,10 +41,11 @@ var Build = React.createClass({
     return (
       <div>
         <h1>Build {this.state.build.projectCanonicalName} #{this.state.build.number}</h1>
-        {error}
         <dl>
           <dt>Status</dt>
           <dd><span className={'build-' + this.state.build.status.type}/></dd>
+          <dt>Message</dt>
+          <dd><pre>{message}</pre></dd>
           <dt>Created at</dt>
           <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>
