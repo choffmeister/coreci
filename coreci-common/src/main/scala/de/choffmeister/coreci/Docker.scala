@@ -97,9 +97,11 @@ class Docker(host: String, port: Int)
       .runWith(Sink.head)
       .flatMap {
         case res if res.status.isSuccess() => Future(res)
-        case res => res.toStrict(3.second).map { res =>
-          if (errorMap.isDefinedAt(res)) throw errorMap(res)
-          else throw new Exception()
+        case res => res.toStrict(3.second).flatMap { res =>
+          if (errorMap.isDefinedAt(res))
+            Future.failed(errorMap(res))
+          else
+            res.entity.toStrict(3.second).flatMap(body => Future.failed(new Exception(body.data.utf8String)))
         }
       }
   }

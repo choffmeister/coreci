@@ -2,6 +2,7 @@ import sbt._
 import sbt.Keys._
 import xerial.sbt.Pack.{ pack => sbtPack, _ }
 import de.choffmeister.sbt.WebAppPlugin.{ webAppBuild => sbtWebAppBuild, _ }
+import com.typesafe.sbt.{ GitVersioning => sbtGit }
 
 object Build extends sbt.Build {
   lazy val dist = TaskKey[File]("dist", "Builds the distribution packages")
@@ -11,8 +12,7 @@ object Build extends sbt.Build {
     scalacOptions ++= Seq("-encoding", "utf8"))
 
   lazy val coordinateSettings = Seq(
-    organization := "de.choffmeister",
-    version := "0.0.1-SNAPSHOT")
+    organization := "de.choffmeister")
 
   lazy val resolverSettings = Seq(
     resolvers += "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/")
@@ -80,5 +80,6 @@ object Build extends sbt.Build {
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
       distDir
     })
+    .enablePlugins(sbtGit)
     .aggregate(common, plugins, server, web)
 }
