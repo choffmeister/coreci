@@ -58,7 +58,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
         val finished = await(builder.run(pending, project.dockerRepository, project.command))
 
         finished.status must beAnInstanceOf[Failed]
-        finished.status.asInstanceOf[Failed].errorMessage must contain("Unknown error")
+        finished.status.asInstanceOf[Failed].errorMessage must contain("No such image")
       }
     }
   }
