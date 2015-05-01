@@ -5,7 +5,7 @@ import javax.crypto.spec.SecretKeySpec
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.server.Directive1
+import akka.http.scaladsl.server.{AuthorizationFailedRejection, Directive1}
 import akka.http.scaladsl.server.Directives._
 import akka.stream.FlowMaterializer
 import akka.util.ByteString
@@ -25,7 +25,7 @@ class GitHubPlugin(implicit val system: ActorSystem, val executor: ExecutionCont
   def routes = {
     path("hook") {
       post {
-        extractHook(None) { case (delivery, event, payload) =>
+        extractHook(Some("secret")) { case (delivery, event, payload) =>
           val repositoryFullName = payload.fields("repository").asJsObject.fields("full_name").asInstanceOf[JsString].value
           val shaAfter = payload.fields("after").asInstanceOf[JsString].value
 
@@ -59,18 +59,18 @@ class GitHubPlugin(implicit val system: ActorSystem, val executor: ExecutionCont
                 if (checkHmacSHA1(hex, sec, payloadBinary)) extract
                 else {
                   log.error("GitHub web hook has invalid signature")
-                  reject
+                  reject(AuthorizationFailedRejection)
                 }
               case signatureRegex(algo, _) =>
                 log.error(s"GitHub web hook uses unsupported signature algorithm $algo")
-                reject
+                reject(AuthorizationFailedRejection)
               case _ =>
                 log.error(s"GitHub web hook signature has invalid format")
-                reject
+                reject(AuthorizationFailedRejection)
             }
           case _ =>
             log.error(s"GitHub web hook lacks signature")
-            reject
+            reject(AuthorizationFailedRejection)
         }
       }
     }
