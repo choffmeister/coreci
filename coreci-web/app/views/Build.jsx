@@ -31,6 +31,12 @@ var Build = React.createClass({
     window.clearTimeout(this.outputTimeout);
   },
 
+  rerun: function () {
+    RestClient.post('/api/builds/' + this.state.build.id + '/rerun').then(build => {
+      this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
+    });
+  },
+
   render: function () {
     var message = this.state.build.status.type == 'failed' ?
       this.state.build.status.errorMessage : '-';
@@ -41,6 +47,7 @@ var Build = React.createClass({
     return (
       <div>
         <h1>Build {this.state.build.projectCanonicalName} #{this.state.build.number}</h1>
+        <p><button onClick={this.rerun} className="btn btn-primary">RERUN</button></p>
         <dl>
           <dt>Status</dt>
           <dd><span className={'build-' + this.state.build.status.type}/></dd>
