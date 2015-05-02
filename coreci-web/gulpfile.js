@@ -73,21 +73,25 @@ gulp.task('javascript', function () {
   }
 });
 
+gulp.task('assets-favicon', function () {
+  return gulp.src('./app/favicon.ico')
+    .pipe(gulp.dest(config.dest()));
+});
 gulp.task('assets-bootstrap-font', function () {
   return gulp.src('./node_modules/bootstrap/fonts/*.*')
     .pipe(gulp.dest(config.dest('app/fonts')));
 });
-gulp.task('assets', ['assets-bootstrap-font']);
+gulp.task('assets', ['assets-favicon', 'assets-bootstrap-font']);
 
 gulp.task('connect', ['build'], function (next) {
   var serveStatic = require('serve-static');
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
-    .use(rewrite(['!(^/app/) /index.html [L]']))
+    .use(rewrite(['!(^/app/)|(^/favicon.ico$) /index.html [L]']))
     .use(serveStatic(config.dest()))
     .listen(config.port, function () {
       gutil.log('Listening on http://localhost:' + config.port + '/');
-      next();
+      //next();
     });
 });
 
