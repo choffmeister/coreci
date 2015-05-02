@@ -1,6 +1,6 @@
 package de.choffmeister.coreci.http
 
-import akka.actor.ActorSystem
+import akka.actor._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
@@ -9,7 +9,7 @@ import spray.json._
 
 import scala.concurrent.ExecutionContext
 
-class ProjectRoutes(val database: Database)
+class ProjectRoutes(val database: Database, workerHandler: ActorRef)
     (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
   lazy val builder = new Builder(database)
 
@@ -33,7 +33,10 @@ class ProjectRoutes(val database: Database)
             post {
               authenticate.bearerToken(acceptExpired = false) { user =>
                 complete {
-                  database.builds.insert(Build(projectId = project.id, image = project.image, command = project.command))
+                  database.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)).map { build =>
+                    workerHandler ! WorkerHandlerProtocol.DispatchBuild
+                    build
+                  }
                 }
               }
             }

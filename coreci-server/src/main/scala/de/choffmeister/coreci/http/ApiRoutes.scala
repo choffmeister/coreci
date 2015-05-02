@@ -10,10 +10,10 @@ import de.choffmeister.coreci.models._
 
 import scala.concurrent.ExecutionContext
 
-class ApiRoutes(val database: Database)
+class ApiRoutes(val database: Database, workerHandler: ActorRef)
     (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
   lazy val authRoutes = new AuthRoutes(database)
-  lazy val projectRoutes = new ProjectRoutes(database)
+  lazy val projectRoutes = new ProjectRoutes(database, workerHandler)
   lazy val buildRoutes = new BuildRoutes(database)
 
   lazy val routes = filterHttpChallengesByExtensionHeader {
