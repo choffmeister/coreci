@@ -13,7 +13,7 @@ import scala.concurrent._
 class Builder(db: Database)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   val config = Config.load()
-  val docker = Docker.open(config.dockerWorkers)
+  val docker = Docker.open(config.dockerWorkers.head)
 
   def run(pending: Build, repository: String, command: List[String]): Future[Build] = {
     log.info(s"Running command $command on image $repository")

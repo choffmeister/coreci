@@ -14,7 +14,7 @@ object Application extends App with Logger {
   cla.subcommand match {
     case Some(cla.reset) if cla.reset.testdata.get == Some(true) =>
       val config = Config.load()
-      val database = Database.open(config.mongoDbServers, config.mongoDbDatabaseName)
+      val database = Database.open(config.mongoDbServer, config.mongoDbDatabaseName)
       val generator = new TestDataGenerator(config, database)
       waitAndExit(for {
         _ <- database.clear()
@@ -23,7 +23,7 @@ object Application extends App with Logger {
       } yield ())
     case Some(cla.reset) =>
       val config = Config.load()
-      val database = Database.open(config.mongoDbServers, config.mongoDbDatabaseName)
+      val database = Database.open(config.mongoDbServer, config.mongoDbDatabaseName)
       waitAndExit(for {
         _ <- database.clear()
         _ <- database.configure()
@@ -38,7 +38,7 @@ object Application extends App with Logger {
     case _ =>
       val config = Config.load()
       val serverConfig = ServerConfig.load()
-      val database = Database.open(config.mongoDbServers, config.mongoDbDatabaseName)
+      val database = Database.open(config.mongoDbServer, config.mongoDbDatabaseName)
       val server = new Server(config, serverConfig, database)
       server.startup()
   }

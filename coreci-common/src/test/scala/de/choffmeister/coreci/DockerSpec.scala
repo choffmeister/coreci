@@ -10,7 +10,7 @@ class DockerSpec extends Specification with NoTimeConversions {
   "Docker" should {
     "create, start and attach to container" in new TestActorSystem {
       within(5.seconds) {
-        val docker = Docker.open(Config.load().dockerWorkers)
+        val docker = Docker.open(Config.load().dockerWorkers.head)
         val command = "uname" :: "-a" :: Nil
         val future = docker.runContainerWith("busybox:latest", command, Sink.fold("")((acc, chunk) => acc + chunk._2.utf8String))
 

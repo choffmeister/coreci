@@ -117,11 +117,16 @@ class Docker(host: String, port: Int)
 }
 
 object Docker {
-  def open(workers: List[(String, Int)])
+  def open(uri: String)
       (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer): Docker = {
-    // TODO implement some kind of load balacing
-    val host = workers.head._1
-    val port = workers.head._2
+    val (host, port) = parseUri(uri)
     new Docker(host, port)
+  }
+
+  private def parseUri(uri: String): (String, Int) = Uri(uri) match {
+    case Uri("tcp", authority, Uri.Path.Empty | Uri.Path.SingleSlash, Uri.Query.Empty, None) =>
+      (authority.host.address(), if (authority.port > 0) authority.port else 2375)
+    case _ =>
+      throw new Exception(s"Unsupported URI '$uri' for MongoDB host")
   }
 }
