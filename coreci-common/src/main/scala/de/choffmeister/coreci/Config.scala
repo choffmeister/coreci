@@ -3,12 +3,11 @@ package de.choffmeister.coreci
 import com.typesafe.config.{Config => TypesafeConfig, ConfigFactory => TypesafeConfigFactory}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.collection.JavaConverters._
 
 case class Config(
   mongoDbServer: String,
   mongoDbDatabaseName: String,
-  dockerWorkers: List[String],
+  dockerWorkers: Map[String, String],
   passwordHashAlgorithm: String,
   passwordHashAlgorithmConfig: List[String],
   builderOutputGroupMaxCount: Int,
@@ -24,7 +23,7 @@ object Config extends Logger {
     Config(
       mongoDbServer = rawCoreci.getString("mongodb.host"),
       mongoDbDatabaseName = rawCoreci.getString("mongodb.database"),
-      dockerWorkers = rawCoreci.getStringList("docker.workers").asScala.toList,
+      dockerWorkers = rawCoreci.getStringMap("docker.workers"),
       passwordHashAlgorithm = rawCoreci.getString("passwords.hash-algorithm").split(":", -1).toList.head,
       passwordHashAlgorithmConfig = rawCoreci.getString("passwords.hash-algorithm").split(":", -1).toList.tail,
       builderOutputGroupMaxCount = rawCoreci.getInt("builder.output-group.max-count"),

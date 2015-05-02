@@ -19,19 +19,21 @@ object WorkerHandlerProtocol {
 }
 
 case class Worker(
-  version: Option[DockerVersion],
-  hostInfo: Option[DockerHostInfo],
-  pings: Vector[(Long, Option[FiniteDuration])],
+  name: String,
+  url: String,
   concurrency: Int,
   builds: List[Build],
-  locked: Boolean)
+  locked: Boolean,
+  dockerVersion: Option[DockerVersion],
+  dockerHostInfo: Option[DockerHostInfo],
+  dockerPings: Vector[(Long, Option[FiniteDuration])])
 
 sealed trait WorkerState
 case object IdleState extends WorkerState
 case object DispatchingState extends WorkerState
 case class RunningState(build: Build) extends WorkerState
 
-class WorkerHandler(database: Database, workerUris: List[String])
+class WorkerHandler(database: Database, workerMap: Map[String, String])
     (implicit executor: ExecutionContext, materializer: FlowMaterializer) extends Actor with ActorLogging {
   import WorkerHandlerProtocol._
   implicit val system = context.system
@@ -41,13 +43,13 @@ class WorkerHandler(database: Database, workerUris: List[String])
   context.system.scheduler.schedule(0.second, 5.second, self, DispatchBuild)
 
   val builder = new Builder(database)
-  val workers = MutableMap(workerUris.map(uri => uri -> Worker(None, None, Vector.empty, 2, Nil, locked = false)): _*)
+  val workers = MutableMap(workerMap.map(w => w._1 -> Worker(w._1, w._2, 2, Nil, locked = false, None, None, Vector.empty)).toSeq: _*)
 
   def receive = {
     case UpdateVersionAndInfo =>
-      workers.keys.foreach { uri =>
-        log.debug(s"Fetching worker $uri info")
-        val docker = Docker.open(uri)
+      workers.foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
+        log.debug(s"Fetching worker $name info")
+        val docker = Docker.open(url)
         val f = for {
           version <- docker.version()
           info <- docker.info()
@@ -55,33 +57,33 @@ class WorkerHandler(database: Database, workerUris: List[String])
 
         f.onComplete {
           case Success((version, info)) =>
-            log.debug(s"Updating worker $uri version and info")
-            setVersion(uri, Some(version))
-            setHostInfo(uri, Some(info))
+            log.debug(s"Updating worker $name version and info")
+            setVersion(name, Some(version))
+            setHostInfo(name, Some(info))
           case Failure(err) =>
-            log.error(s"Unable to fetch worker $uri version or info: $err")
-            setVersion(uri, None)
-            setHostInfo(uri, None)
+            log.error(s"Unable to fetch worker $name version or info: $err")
+            setVersion(name, None)
+            setHostInfo(name, None)
         }
       }
 
     case UpdatePing =>
-      workers.keys.foreach { uri =>
-        Docker.open(uri).ping()
+      workers.foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
+        Docker.open(url).ping()
           .map(Some.apply)
           .recover { case _ => None }
           .map {
-            case x @ Some(duration) => log.debug(s"Pinging worker $uri took ${duration.toMillis}ms"); x
-            case x @ None => log.warning(s"Pinging worker $uri failed"); x
+            case x @ Some(duration) => log.debug(s"Pinging worker $name took ${duration.toMillis}ms"); x
+            case x @ None => log.warning(s"Pinging worker $name failed"); x
           }
-          .foreach(duration => addPing(uri, duration))
+          .foreach(duration => addPing(name, duration))
       }
 
     case DispatchBuild =>
-      val available = workers.filter(w => w._2.hostInfo.isDefined && w._2.builds.length < w._2.concurrency && !w._2.locked)
+      val available = workers.filter(w => w._2.dockerHostInfo.isDefined && w._2.builds.length < w._2.concurrency && !w._2.locked)
 
-      random(available).foreach { case (uri, _) =>
-        lock(uri)
+      random(available).foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
+        lock(name)
         database.builds.getPending()
           .recover { case err =>
             log.warning(s"Failed to get pending build: $err")
@@ -89,56 +91,56 @@ class WorkerHandler(database: Database, workerUris: List[String])
           }
           .foreach {
             case Some(build) =>
-              log.debug(s"Dispatching build ${build.projectCanonicalName}#${build.number} (${build.id.stringify}) to worker $uri")
-              addBuild(uri, build)
+              log.debug(s"Dispatching build ${build.projectCanonicalName}#${build.number} (${build.id.stringify}) to worker $name")
+              addBuild(name, build)
               builder.run(build).foreach { finished =>
-                removeBuild(uri, build.id)
+                removeBuild(name, build.id)
                 self ! DispatchBuild
               }
 
-              unlock(uri)
+              unlock(name)
               self ! DispatchBuild
             case None =>
-              unlock(uri)
+              unlock(name)
           }
       }
 
     case QueryWorkers =>
-      sender ! workers.toMap
+      sender ! workers.values.toList
   }
 
-  private def addBuild(uri: String, build: Build) = {
-    val w = workers(uri)
-    workers.update(uri, w.copy(builds = w.builds :+ build))
+  private def addBuild(name: String, build: Build) = {
+    val w = workers(name)
+    workers.update(name, w.copy(builds = w.builds :+ build))
   }
 
-  private def removeBuild(uri: String, buildId: BSONObjectID) = {
-    val w = workers(uri)
-    workers.update(uri, w.copy(builds = w.builds.filter(_.id != buildId)))
+  private def removeBuild(name: String, buildId: BSONObjectID) = {
+    val w = workers(name)
+    workers.update(name, w.copy(builds = w.builds.filter(_.id != buildId)))
   }
 
-  private def lock(uri: String) = {
-    workers.update(uri, workers(uri).copy(locked = true))
+  private def lock(name: String) = {
+    workers.update(name, workers(name).copy(locked = true))
   }
 
-  private def unlock(uri: String) = {
-    workers.update(uri, workers(uri).copy(locked = false))
+  private def unlock(name: String) = {
+    workers.update(name, workers(name).copy(locked = false))
   }
 
-  private def addPing(uri: String, duration: Option[FiniteDuration]) = {
-    val w = workers(uri)
+  private def addPing(name: String, duration: Option[FiniteDuration]) = {
+    val w = workers(name)
     val now = System.currentTimeMillis()
-    workers.update(uri, w.copy(pings = capSize(w.pings :+ now -> duration, 1000)))
+    workers.update(name, w.copy(dockerPings = capSize(w.dockerPings :+ now -> duration, 1000)))
   }
 
-  private def setVersion(uri: String, version: Option[DockerVersion]) = {
-    val w = workers(uri)
-    workers.update(uri, w.copy(version = version))
+  private def setVersion(name: String, version: Option[DockerVersion]) = {
+    val w = workers(name)
+    workers.update(name, w.copy(dockerVersion = version))
   }
 
-  private def setHostInfo(uri: String, hostInfo: Option[DockerHostInfo]) = {
-    val w = workers(uri)
-    workers.update(uri, w.copy(hostInfo = hostInfo))
+  private def setHostInfo(name: String, hostInfo: Option[DockerHostInfo]) = {
+    val w = workers(name)
+    workers.update(name, w.copy(dockerHostInfo = hostInfo))
   }
 
   private def random[K, V](map: MutableMap[K, V]): Option[(K, V)] = map.size match {

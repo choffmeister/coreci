@@ -17,7 +17,7 @@ class WorkerRoutes(val database: Database, workerHandler: ActorRef)
       get {
         complete {
           val f = workerHandler.ask(WorkerHandlerProtocol.QueryWorkers)(1.seconds)
-          f.mapTo[Map[String, Worker]]
+          f.mapTo[List[Worker]]
         }
       }
     }

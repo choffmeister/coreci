@@ -11,17 +11,14 @@ var Workers = React.createClass({
   },
 
   render: function () {
-    console.log(this.props.data['workers-list'].workers);
-    var workerMap = this.props.data['workers-list'].workers;
-    var workers = Object.keys(workerMap).map(function (uri) {
-      var worker = workerMap[uri];
+    var workers = this.props.data['workers-list'].workers.map(function (worker) {
       return (
-        <tr key={uri}>
-          <td>{uri}</td>
+        <tr key={worker.name}>
+          <td>{worker.name}</td>
           <td>{worker.builds.length}/{worker.concurrency}</td>
-          <td>{worker.hostInfo ? worker.hostInfo.cpus : '-'}</td>
-          <td>{worker.hostInfo ? Math.round(worker.hostInfo.memory / 1024 / 1024) + ' MB' : '-'}</td>
-          <td className="hidden-xs">{worker.version ? worker.version.version : '-'}</td>
+          <td>{worker.dockerHostInfo ? worker.dockerHostInfo.cpus : '-'}</td>
+          <td>{worker.dockerHostInfo ? Math.round(worker.dockerHostInfo.memory / 1024 / 1024) + ' MB' : '-'}</td>
+          <td className="hidden-xs">{worker.dockerVersion ? worker.dockerVersion.version : '-'}</td>
         </tr>
       );
     });
