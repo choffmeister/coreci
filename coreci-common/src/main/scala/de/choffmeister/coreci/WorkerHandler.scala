@@ -3,7 +3,6 @@ package de.choffmeister.coreci
 import akka.actor._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci.models._
-import spray.json.JsObject
 
 import scala.collection.mutable.{Map => MutableMap}
 import scala.concurrent._
@@ -12,10 +11,11 @@ import scala.util._
 
 object WorkerHandlerProtocol {
   case object UpdateInfo
+  case object UpdatePing
   case object DispatchBuild
 }
 
-case class Worker(info: Either[Int, JsObject], state: WorkerState)
+case class Worker(info: Either[Int, DockerHostInfo], pings: Vector[(Long, Option[FiniteDuration])], state: WorkerState)
 
 sealed trait WorkerState
 case object IdleState extends WorkerState
@@ -26,33 +26,13 @@ class WorkerHandler(database: Database, workerUris: List[String])(implicit execu
   import WorkerHandlerProtocol._
   implicit val system = context.system
   context.system.scheduler.schedule(0.second, 60.second, self, UpdateInfo)
+  context.system.scheduler.schedule(0.second, 15.second, self, UpdatePing)
   context.system.scheduler.schedule(0.second, 5.second, self, DispatchBuild)
 
   val builder = new Builder(database)
-  val workers = MutableMap(workerUris.map(uri => uri -> Worker(Left(0), IdleState)): _*)
+  val workers = MutableMap(workerUris.map(uri => uri -> Worker(Left(0), Vector.empty, IdleState)): _*)
 
   def receive = {
-    case DispatchBuild =>
-      random(workers.filter(w => w._2.info.isRight && w._2.state == IdleState)).foreach { idleWorker =>
-        workers.update(idleWorker._1, idleWorker._2.copy(state = DispatchingState))
-
-        database.builds.getPending()
-          .recover { case err =>
-            log.error(s"Failed to get pending build: $err")
-            None
-          }
-          .foreach {
-            case Some(pending) =>
-              log.info(s"Dispatch build ${pending.projectCanonicalName}#${pending.number} (${pending.id.stringify}) to worker ${idleWorker._1}")
-              workers.update(idleWorker._1, idleWorker._2.copy(state = RunningState(pending)))
-              builder.run(pending).foreach { finished =>
-                workers.update(idleWorker._1, idleWorker._2.copy(state = IdleState))
-              }
-            case None =>
-              workers.update(idleWorker._1, idleWorker._2.copy(state = IdleState))
-          }
-      }
-
     case UpdateInfo =>
       workers.keys.foreach { uri =>
         log.debug(s"Fetching worker $uri info")
@@ -68,10 +48,51 @@ class WorkerHandler(database: Database, workerUris: List[String])(implicit execu
             }
         }
       }
+
+    case UpdatePing =>
+      workers.keys.foreach { uri =>
+        val now = System.currentTimeMillis()
+        Docker.open(uri).ping().map(Some.apply)
+          .recover { case _ =>
+            log.warning(s"Pinging worker $uri failed")
+            None
+          }
+          .foreach { time =>
+            if (time.isDefined) log.info(s"Pinging worker $uri took ${time.get.toMillis}ms")
+            val old = workers(uri)
+            workers.update(uri, old.copy(pings = capSize(old.pings :+ now -> time, 1000)))
+          }
+      }
+
+    case DispatchBuild =>
+      random(workers.filter(w => w._2.info.isRight && w._2.state == IdleState)).foreach { idleWorker =>
+        workers.update(idleWorker._1, idleWorker._2.copy(state = DispatchingState))
+
+        database.builds.getPending()
+          .recover { case err =>
+            log.warning(s"Failed to get pending build: $err")
+            None
+          }
+          .foreach {
+            case Some(pending) =>
+              log.info(s"Dispatching build ${pending.projectCanonicalName}#${pending.number} (${pending.id.stringify}) to worker ${idleWorker._1}")
+              workers.update(idleWorker._1, idleWorker._2.copy(state = RunningState(pending)))
+              builder.run(pending).foreach { finished =>
+                workers.update(idleWorker._1, idleWorker._2.copy(state = IdleState))
+              }
+            case None =>
+              workers.update(idleWorker._1, idleWorker._2.copy(state = IdleState))
+          }
+      }
   }
 
   private def random[K, V](map: MutableMap[K, V]): Option[(K, V)] = map.size match {
     case 0 => None
     case l => Some(map.toSeq(Random.nextInt(l)))
+  }
+
+  private def capSize[T](list: Vector[T], max: Int): Vector[T] = list.size match {
+    case l if l > max => list.drop(l - max)
+    case _ => list
   }
 }

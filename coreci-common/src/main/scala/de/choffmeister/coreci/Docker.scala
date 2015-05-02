@@ -1,5 +1,7 @@
 package de.choffmeister.coreci
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods._
@@ -11,6 +13,9 @@ import spray.json._
 
 import scala.concurrent._
 import scala.concurrent.duration._
+
+case class DockerVersion(apiVersion: String, version: String, goVersion: String, gitCommit: String)
+case class DockerHostInfo(kernelVersion: String, memory: Long)
 
 /**
  * Docker remote client
@@ -24,8 +29,20 @@ import scala.concurrent.duration._
  */
 class Docker(host: String, port: Int)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
-  def info(): Future[JsObject] = {
-    request(GET, Uri("/info")).flatMap(parseResponseBodyAsJson)
+  def version(): Future[DockerVersion] = {
+    request(GET, Uri("/version")).flatMap(parseResponseBodyAsJson).map(DockerJsonProtocol.readVersion)
+  }
+
+  def info(): Future[DockerHostInfo] = {
+    request(GET, Uri("/info")).flatMap(parseResponseBodyAsJson).map(DockerJsonProtocol.readHostInfo)
+  }
+
+  def ping(): Future[FiniteDuration] = {
+    val start = System.nanoTime()
+    request(GET, Uri("/_ping")).flatMap(drainResponseBody).map { _ =>
+      val end = System.nanoTime()
+      FiniteDuration(end - start, TimeUnit.NANOSECONDS)
+    }
   }
 
   def runContainerWith[T](
@@ -133,4 +150,20 @@ object Docker {
     case _ =>
       throw new Exception(s"Unsupported URI '$uri' for MongoDB host")
   }
+}
+
+object DockerJsonProtocol extends DefaultJsonProtocol {
+  def readVersion(value: JsValue): DockerVersion =
+    value.asJsObject.getFields("ApiVersion", "Version", "GitCommit", "GoVersion") match {
+      case Seq(JsString(apiVersion), JsString(version), JsString(gitCommit), JsString(goVersion)) =>
+        DockerVersion.tupled(apiVersion, version, gitCommit, goVersion)
+      case _ => throw new DeserializationException("Expected Docker version JSON object")
+    }
+
+  def readHostInfo(value: JsValue): DockerHostInfo =
+    value.asJsObject.getFields("KernelVersion", "MemTotal") match {
+      case Seq(JsString(kernelVersion), JsNumber(memory)) =>
+        DockerHostInfo.tupled(kernelVersion, memory.toLong)
+      case _ => throw new DeserializationException("Expected Docker host info JSON object")
+    }
 }
