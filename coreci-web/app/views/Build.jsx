@@ -23,8 +23,18 @@ var Build = React.createClass({
     };
   },
 
+  componentWillReceiveProps: function(nextProps) {
+    this.setState({
+      build: nextProps.data['builds-show'].build,
+      output: ''
+    });
+    window.clearTimeout(this.outputTimeout);
+    this.update(nextProps.data['builds-show'].build.projectCanonicalName, nextProps.data['builds-show'].build.number, false);
+  },
+
   componentDidMount: function () {
-    this.updateConsoleOutput(false);
+    console.log(this.props.data['builds-show'].build);
+    this.update(this.props.data['builds-show'].build.projectCanonicalName, this.props.data['builds-show'].build.number, false);
   },
 
   componentWillUnmount: function() {
@@ -78,25 +88,27 @@ var Build = React.createClass({
     );
   },
 
-  updateConsoleOutput: function (scroll) {
-    var params = this.context.router.getCurrentParams();
-    var build = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber);
-    var output = RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber + '/output?skip=' + this.state.output.length, true);
+  update: function (projectCanonicalName, buildNumber, scroll) {
+    var build = RestClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
+    var output = RestClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + this.state.output.length, true);
 
     Promise.all2({ build: build, output: output })
       .then(res => {
-        this.setState({
-          build: res.build,
-          output: this.state.output + res.output
-        });
+        if (this.props.data['builds-show'].build.projectCanonicalName == projectCanonicalName &&
+            this.props.data['builds-show'].build.number == buildNumber) {
+          this.setState({
+            build: res.build,
+            output: this.state.output + res.output
+          });
 
-        if (scroll) {
-          this.refs.console.getDOMNode().scrollIntoView(false);
-        }
-        if (['succeeded', 'failed'].indexOf(res.build.status.type) < 0) {
-          this.outputTimeout = window.setTimeout(function () {
-            this.updateConsoleOutput(true);
-          }.bind(this), 1000);
+          if (scroll) {
+            this.refs.console.getDOMNode().scrollIntoView(false);
+          }
+          if (['succeeded', 'failed'].indexOf(res.build.status.type) < 0) {
+            this.outputTimeout = window.setTimeout(function () {
+              this.update(projectCanonicalName, buildNumber, true);
+            }.bind(this), 1000);
+          }
         }
       });
   }
