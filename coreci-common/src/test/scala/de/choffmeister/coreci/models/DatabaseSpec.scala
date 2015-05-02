@@ -21,7 +21,7 @@ class DatabaseSpec extends Specification with NoTimeConversions{
     }
 
     entity("builds", _.builds, withProject) {
-      case Left((project, i)) => Build(projectId = project.id, status = Pending)
+      case Left((project, i)) => Build(projectId = project.id, status = Pending, image = "busybox:latest", command = "uname" :: "-a" :: Nil)
       case Right(b) => b.copy(status = Running(BSONDateTime(0)))
     }
 

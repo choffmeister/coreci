@@ -17,6 +17,8 @@ case class Build(
   projectId: BSONObjectID,
   number: Int = 0,
   status: BuildStatus = Pending,
+  image: String,
+  command: List[String],
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0),
   projectCanonicalName: String = "") extends BaseModel
@@ -109,6 +111,8 @@ object BuildJSONFormat {
       projectId = doc.getAs[BSONObjectID]("projectId").get,
       number = doc.getAs[Int]("number").get,
       status = doc.getAs[BuildStatus]("status").get,
+      image = doc.getAs[String]("image").get,
+      command = doc.getAs[List[String]]("command").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
       projectCanonicalName = doc.getAs[String]("projectCanonicalName").get
@@ -121,6 +125,8 @@ object BuildJSONFormat {
       "projectId" -> obj.projectId,
       "number" -> obj.number,
       "status" -> obj.status,
+      "image" -> obj.image,
+      "command" -> obj.command,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt,
       "projectCanonicalName" -> obj.projectCanonicalName

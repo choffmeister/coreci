@@ -37,7 +37,9 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
 
   private def build(project: Project, i: Int) = Build(
     projectId = project.id,
-    status = Succeeded(now, now))
+    status = Succeeded(now, now),
+    image = "node:0.10",
+    command = "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: "--no-spin" :: Nil)
 
   private def output(build: Build, i: Int) = Output(
     buildId = build.id,
