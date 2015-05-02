@@ -15,9 +15,9 @@ class BuilderSpec extends Specification with NoTimeConversions {
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "busybox:latest",
+          image = "busybox:latest",
           command = "uname" :: "-a" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.dockerRepository, command = project.command)))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
         val finished = await(builder.run(pending))
         val outputs = await(db.outputs.all)
 
@@ -34,9 +34,9 @@ class BuilderSpec extends Specification with NoTimeConversions {
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "busybox:latest",
+          image = "busybox:latest",
           command = "false" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.dockerRepository, command = project.command)))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
         val finished = await(builder.run(pending))
 
         finished.status must beAnInstanceOf[Failed]
@@ -52,9 +52,9 @@ class BuilderSpec extends Specification with NoTimeConversions {
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "unknownimage",
+          image = "unknownimage",
           command = "uname" :: "-a" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.dockerRepository, command = project.command)))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
         val finished = await(builder.run(pending))
 
         finished.status must beAnInstanceOf[Failed]

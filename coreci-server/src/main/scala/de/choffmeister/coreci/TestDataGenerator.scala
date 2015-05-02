@@ -29,7 +29,7 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     canonicalName = s"project$i",
     title = s"Project $i",
     description = s"This is Project #$i",
-    dockerRepository = "node:0.10",
+    image = "node:0.10",
     command = i match {
       case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: "--no-spin" :: Nil
       case _ => "uname" :: "-a" :: Nil
