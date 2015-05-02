@@ -10,15 +10,15 @@ class BuilderSpec extends Specification with NoTimeConversions {
     "runs successful builds" in new TestActorSystem {
       TestDatabase { db =>
         val builder = new Builder(db)
-        var project = await(db.projects.insert(Project(
+        val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "busybox:latest",
+          image = "busybox:latest",
           command = "uname" :: "-a" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id)))
-        val finished = await(builder.run(pending, project.dockerRepository, project.command))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
+        val finished = await(builder.run(pending))
         val outputs = await(db.outputs.all)
 
         finished.status must beAnInstanceOf[Succeeded]
@@ -29,15 +29,15 @@ class BuilderSpec extends Specification with NoTimeConversions {
     "runs failing builds" in new TestActorSystem {
       TestDatabase { db =>
         val builder = new Builder(db)
-        var project = await(db.projects.insert(Project(
+        val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "busybox:latest",
+          image = "busybox:latest",
           command = "false" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id)))
-        val finished = await(builder.run(pending, project.dockerRepository, project.command))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
+        val finished = await(builder.run(pending))
 
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("Exit code 1")
@@ -47,15 +47,15 @@ class BuilderSpec extends Specification with NoTimeConversions {
     "runs erroring builds" in new TestActorSystem {
       TestDatabase { db =>
         val builder = new Builder(db)
-        var project = await(db.projects.insert(Project(
+        val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,
           canonicalName = "p",
           title = "Project",
           description = "This is a project",
-          dockerRepository = "unknownimage",
+          image = "unknownimage",
           command = "uname" :: "-a" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id)))
-        val finished = await(builder.run(pending, project.dockerRepository, project.command))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
+        val finished = await(builder.run(pending))
 
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("No such image")

@@ -1,5 +1,6 @@
 package de.choffmeister.coreci.models
 
+import akka.http.scaladsl.model.Uri
 import reactivemongo.api._
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.bson._
@@ -63,10 +64,18 @@ class Database(val mongoDbDatabase: DefaultDB, collectionNamePrefix: String = ""
 object Database {
   lazy val mongoDbDriver = new MongoDriver
 
-  def open(servers: List[(String, Int)], databaseName: String, collectionNamePrefix: String = "")(implicit ec: ExecutionContext): Database = {
-    val mongoDbConnection = mongoDbDriver.connection(servers.map(x => x._1 + ":" + x._2.toString))
+  def open(uri: String, databaseName: String, collectionNamePrefix: String = "")(implicit ec: ExecutionContext): Database = {
+    val (host, port) = parseUri(uri)
+    val mongoDbConnection = mongoDbDriver.connection(host + ":" + port :: Nil)
     val mongoDbDatabase = mongoDbConnection(databaseName)
 
     new Database(mongoDbDatabase, collectionNamePrefix)
+  }
+
+  private def parseUri(uri: String): (String, Int) = Uri(uri) match {
+    case Uri("mongodb", authority, Uri.Path.Empty | Uri.Path.SingleSlash, Uri.Query.Empty, None) =>
+      (authority.host.address(), if (authority.port > 0) authority.port else 27017)
+    case _ =>
+      throw new Exception(s"Unsupported URI '$uri' for MongoDB host")
   }
 }

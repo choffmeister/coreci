@@ -72,7 +72,7 @@ var Project = React.createClass({
           <dt>Updated at</dt>
           <dd><DateTime value={project.updatedAt} kind="relative"/></dd>
           <dt>Docker image</dt>
-          <dd>{project.dockerRepository}</dd>
+          <dd>{project.image}</dd>
           <dt>Command</dt>
           <dd><pre>{JSON.stringify(project.command)}</pre></dd>
         </dl>

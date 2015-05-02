@@ -13,10 +13,10 @@ import scala.concurrent._
 class Builder(db: Database)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   val config = Config.load()
-  val docker = Docker.open(config.dockerWorkers)
+  val docker = Docker.open(config.dockerWorkers.head)
 
-  def run(pending: Build, repository: String, command: List[String]): Future[Build] = {
-    log.info(s"Running command $command on image $repository")
+  def run(pending: Build): Future[Build] = {
+    log.info(s"Running command ${pending.command} on image ${pending.image}")
 
     val startedAt = now
     val outputSink = Flow[(Long, ByteString)]
@@ -31,7 +31,7 @@ class Builder(db: Database)
 
     val finished = for {
       started <- db.builds.update(pending.copy(status = Running(startedAt)))
-      (res, info) <- docker.runContainerWith(repository, command, outputSink)
+      (res, info) <- docker.runContainerWith(pending.image, pending.command, outputSink)
     } yield info.fields("State").asJsObject.fields("ExitCode").asInstanceOf[JsNumber].value.toInt match {
       case 0 => pending.copy(status = Succeeded(startedAt, now))
       case exitCode => pending.copy(status = Failed(startedAt, now, s"Exit code $exitCode"))

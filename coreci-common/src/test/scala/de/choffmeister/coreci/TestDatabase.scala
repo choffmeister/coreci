@@ -14,7 +14,7 @@ object TestDatabase {
 
   def apply[R: AsResult](a: Database ⇒ R) = {
     val suffix = UUID.randomUUID().toString
-    val db = Database.open(config.mongoDbServers, config.mongoDbDatabaseName, suffix)
+    val db = Database.open(config.mongoDbServer, config.mongoDbDatabaseName, suffix)
 
     try {
       await(db.configure())
