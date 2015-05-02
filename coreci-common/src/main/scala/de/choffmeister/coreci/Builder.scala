@@ -10,10 +10,9 @@ import spray.json._
 
 import scala.concurrent._
 
-class Builder(db: Database)
+class Builder(db: Database, docker: Docker)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   val config = Config.load()
-  val docker = Docker.open(config.dockerWorkers.head._2)
 
   def run(pending: Build): Future[Build] = {
     log.info(s"Running command ${pending.command} on image ${pending.image}")

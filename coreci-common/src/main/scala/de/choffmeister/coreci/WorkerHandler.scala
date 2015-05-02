@@ -42,7 +42,6 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
   context.system.scheduler.schedule(0.second, 15.second, self, UpdatePing)
   context.system.scheduler.schedule(0.second, 5.second, self, DispatchBuild)
 
-  val builder = new Builder(database)
   val workers = MutableMap(workerMap.map(w => w._1 -> Worker(w._1, w._2, 2, Nil, locked = false, None, None, Vector.empty)).toSeq: _*)
 
   def receive = {
@@ -69,7 +68,8 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
 
     case UpdatePing =>
       workers.foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
-        Docker.open(url).ping()
+        val docker = Docker.open(url)
+        docker.ping()
           .map(Some.apply)
           .recover { case _ => None }
           .map {
@@ -93,6 +93,8 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
             case Some(build) =>
               log.debug(s"Dispatching build ${build.projectCanonicalName}#${build.number} (${build.id.stringify}) to worker $name")
               addBuild(name, build)
+              val docker = Docker.open(url)
+              val builder = new Builder(database, docker)
               builder.run(build).foreach { finished =>
                 removeBuild(name, build.id)
                 self ! DispatchBuild

@@ -11,8 +11,6 @@ import scala.concurrent.ExecutionContext
 
 class ProjectRoutes(val database: Database, workerHandler: ActorRef)
     (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
-  lazy val builder = new Builder(database)
-
   lazy val routes =
     pathEnd {
       get {
