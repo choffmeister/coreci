@@ -3,6 +3,7 @@ package de.choffmeister.coreci.models
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
+import reactivemongo.core.commands.{FindAndModify, Update}
 
 import scala.concurrent._
 
@@ -58,6 +59,15 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
     query(BSONDocument("projectId" -> projectId), sort = BSONDocument("createdAt" -> -1), page = page)
   def findByNumber(projectId: BSONObjectID, number: Int): Future[Option[Build]] =
     queryOne(BSONDocument("projectId" -> projectId, "number" -> number))
+
+  def getPending(): Future[Option[Build]] = {
+    val now = BSONDateTime(System.currentTimeMillis)
+    val selector = BSONDocument("status" -> BuildJSONFormat.StatusWriter.write(Pending))
+    val modifier = Update(BSONDocument("$set" -> BSONDocument("status" -> BuildJSONFormat.StatusWriter.write(Running(now)))), fetchNewObject = true)
+
+    database.mongoDbDatabase.command(new FindAndModify(collection.name, selector, modifier))
+      .map(_.map(BuildJSONFormat.Reader.read))
+  }
 }
 
 object BuildJSONFormat {

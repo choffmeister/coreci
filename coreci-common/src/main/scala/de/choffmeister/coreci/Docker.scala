@@ -24,6 +24,10 @@ import scala.concurrent.duration._
  */
 class Docker(host: String, port: Int)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
+  def info(): Future[JsObject] = {
+    request(GET, Uri("/info")).flatMap(parseResponseBodyAsJson)
+  }
+
   def runContainerWith[T](
       repository: String,
       command: List[String],

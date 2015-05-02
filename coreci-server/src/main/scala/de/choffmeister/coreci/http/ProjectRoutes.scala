@@ -33,9 +33,7 @@ class ProjectRoutes(val database: Database)
             post {
               authenticate.bearerToken(acceptExpired = false) { user =>
                 complete {
-                  val pending = database.builds.insert(Build(projectId = project.id, image = project.image, command = project.command))
-                  pending.flatMap(p => builder.run(p))
-                  pending
+                  database.builds.insert(Build(projectId = project.id, image = project.image, command = project.command))
                 }
               }
             }

@@ -31,15 +31,15 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     description = s"This is Project #$i",
     image = "node:0.10",
     command = i match {
-      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: "--no-spin" :: Nil
+      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--no-spin" :: Nil
       case _ => "uname" :: "-a" :: Nil
     })
 
   private def build(project: Project, i: Int) = Build(
     projectId = project.id,
     status = Succeeded(now, now),
-    image = "node:0.10",
-    command = "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: "--no-spin" :: Nil)
+    image = project.image,
+    command = project.command)
 
   private def output(build: Build, i: Int) = Output(
     buildId = build.id,
