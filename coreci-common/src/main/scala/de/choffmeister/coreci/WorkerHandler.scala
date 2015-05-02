@@ -11,16 +11,19 @@ import scala.concurrent.duration._
 import scala.util._
 
 object WorkerHandlerProtocol {
-  case object UpdateInfo
+  case object UpdateVersionAndInfo
   case object UpdatePing
   case object DispatchBuild
+
+  case object QueryWorkers
 }
 
 case class Worker(
+  version: Option[DockerVersion],
+  hostInfo: Option[DockerHostInfo],
+  pings: Vector[(Long, Option[FiniteDuration])],
   concurrency: Int,
   builds: List[Build],
-  info: Either[Int, DockerHostInfo],
-  pings: Vector[(Long, Option[FiniteDuration])],
   locked: Boolean)
 
 sealed trait WorkerState
@@ -33,27 +36,32 @@ class WorkerHandler(database: Database, workerUris: List[String])
   import WorkerHandlerProtocol._
   implicit val system = context.system
 
-  context.system.scheduler.schedule(0.second, 60.second, self, UpdateInfo)
+  context.system.scheduler.schedule(0.second, 60.second, self, UpdateVersionAndInfo)
   context.system.scheduler.schedule(0.second, 15.second, self, UpdatePing)
   context.system.scheduler.schedule(0.second, 5.second, self, DispatchBuild)
 
   val builder = new Builder(database)
-  val workers = MutableMap(workerUris.map(uri => uri -> Worker(2, Nil, Left(0), Vector.empty, locked = false)): _*)
+  val workers = MutableMap(workerUris.map(uri => uri -> Worker(None, None, Vector.empty, 2, Nil, locked = false)): _*)
 
   def receive = {
-    case UpdateInfo =>
+    case UpdateVersionAndInfo =>
       workers.keys.foreach { uri =>
         log.debug(s"Fetching worker $uri info")
-        Docker.open(uri).info().onComplete {
-          case Success(info) =>
-            log.debug(s"Updating worker $uri state")
-            setInfo(uri, Right(info))
+        val docker = Docker.open(uri)
+        val f = for {
+          version <- docker.version()
+          info <- docker.info()
+        } yield (version, info)
+
+        f.onComplete {
+          case Success((version, info)) =>
+            log.debug(s"Updating worker $uri version and info")
+            setVersion(uri, Some(version))
+            setHostInfo(uri, Some(info))
           case Failure(err) =>
-            log.error(s"Unable to fetch worker $uri state: $err")
-            workers(uri).info match {
-              case Right(_) => setInfo(uri, Left(1))
-              case Left(i) => setInfo(uri, Left(i + 1))
-            }
+            log.error(s"Unable to fetch worker $uri version or info: $err")
+            setVersion(uri, None)
+            setHostInfo(uri, None)
         }
       }
 
@@ -70,7 +78,7 @@ class WorkerHandler(database: Database, workerUris: List[String])
       }
 
     case DispatchBuild =>
-      val available = workers.filter(w => w._2.info.isRight && w._2.builds.length < w._2.concurrency && !w._2.locked)
+      val available = workers.filter(w => w._2.hostInfo.isDefined && w._2.builds.length < w._2.concurrency && !w._2.locked)
 
       random(available).foreach { case (uri, _) =>
         lock(uri)
@@ -94,6 +102,9 @@ class WorkerHandler(database: Database, workerUris: List[String])
               unlock(uri)
           }
       }
+
+    case QueryWorkers =>
+      sender ! workers.toMap
   }
 
   private def addBuild(uri: String, build: Build) = {
@@ -120,9 +131,14 @@ class WorkerHandler(database: Database, workerUris: List[String])
     workers.update(uri, w.copy(pings = capSize(w.pings :+ now -> duration, 1000)))
   }
 
-  private def setInfo(uri: String, info: Either[Int, DockerHostInfo]) = {
+  private def setVersion(uri: String, version: Option[DockerVersion]) = {
     val w = workers(uri)
-    workers.update(uri, w.copy(info = info))
+    workers.update(uri, w.copy(version = version))
+  }
+
+  private def setHostInfo(uri: String, hostInfo: Option[DockerHostInfo]) = {
+    val w = workers(uri)
+    workers.update(uri, w.copy(hostInfo = hostInfo))
   }
 
   private def random[K, V](map: MutableMap[K, V]): Option[(K, V)] = map.size match {

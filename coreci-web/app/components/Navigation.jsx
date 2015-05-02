@@ -24,6 +24,7 @@ var Navigation = React.createClass({
           <Nav navbar right>
             <NavItemLink to="builds-list" eventKey={1}>Builds</NavItemLink>
             <NavItemLink to="projects-list" eventKey={2}>Projects</NavItemLink>
+            <NavItemLink to="workers-list" eventKey={2}>Workers</NavItemLink>
             <ModalTrigger modal={<LoginDialog />}>
               <NavItem onClick={this.noop} eventKey={3}>Login</NavItem>
             </ModalTrigger>

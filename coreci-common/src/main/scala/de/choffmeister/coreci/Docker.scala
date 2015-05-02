@@ -14,8 +14,18 @@ import spray.json._
 import scala.concurrent._
 import scala.concurrent.duration._
 
-case class DockerVersion(apiVersion: String, version: String, goVersion: String, gitCommit: String)
-case class DockerHostInfo(kernelVersion: String, memory: Long)
+case class DockerVersion(
+  apiVersion: String,
+  version: String,
+  goVersion: String,
+  gitCommit: String)
+
+case class DockerHostInfo(
+  id: String,
+  name: String,
+  cpus: Int,
+  memory: Long,
+  kernelVersion: String)
 
 /**
  * Docker remote client
@@ -156,14 +166,23 @@ object DockerJsonProtocol extends DefaultJsonProtocol {
   def readVersion(value: JsValue): DockerVersion =
     value.asJsObject.getFields("ApiVersion", "Version", "GitCommit", "GoVersion") match {
       case Seq(JsString(apiVersion), JsString(version), JsString(gitCommit), JsString(goVersion)) =>
-        DockerVersion.tupled(apiVersion, version, gitCommit, goVersion)
+        DockerVersion(
+          apiVersion = apiVersion,
+          version = version,
+          gitCommit = gitCommit,
+          goVersion = goVersion)
       case _ => throw new DeserializationException("Expected Docker version JSON object")
     }
 
   def readHostInfo(value: JsValue): DockerHostInfo =
-    value.asJsObject.getFields("KernelVersion", "MemTotal") match {
-      case Seq(JsString(kernelVersion), JsNumber(memory)) =>
-        DockerHostInfo.tupled(kernelVersion, memory.toLong)
+    value.asJsObject.getFields("ID", "Name", "NCPU", "MemTotal", "KernelVersion") match {
+      case Seq(JsString(id), JsString(name), JsNumber(cpus), JsNumber(memory), JsString(kernelVersion)) =>
+        DockerHostInfo(
+          id = id,
+          name = name,
+          cpus = cpus.toInt,
+          memory = memory.toLong,
+          kernelVersion = kernelVersion)
       case _ => throw new DeserializationException("Expected Docker host info JSON object")
     }
 }

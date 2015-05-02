@@ -1,11 +1,14 @@
 package de.choffmeister.coreci
 
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import de.choffmeister.coreci.models._
 import reactivemongo.bson._
 import spray.json._
+
+import scala.concurrent.duration._
 
 trait DateJsonProtocol extends DefaultJsonProtocol {
   implicit object DateFormat extends JsonFormat[Date] {
@@ -14,6 +17,17 @@ trait DateJsonProtocol extends DefaultJsonProtocol {
       value match {
         case JsNumber(dateTicks) => new Date(dateTicks.toLong)
         case _ => deserializationError(s"Date time ticks expected. Got '$value'")
+      }
+  }
+}
+
+trait FiniteDurationProtocol extends DefaultJsonProtocol {
+  implicit object FiniteDurationFormat extends JsonFormat[FiniteDuration] {
+    def write(dur: FiniteDuration): JsValue = JsNumber(dur.toMillis)
+    def read(value: JsValue): FiniteDuration =
+      value match {
+        case JsNumber(millis) => FiniteDuration(millis.toLong, TimeUnit.MILLISECONDS)
+        case _ => deserializationError(s"Finite duration milliseconds expected. Got '$value'")
       }
   }
 }
@@ -40,6 +54,7 @@ trait BSONJsonProtocol extends DefaultJsonProtocol {
 
 trait JsonProtocol extends DefaultJsonProtocol
     with DateJsonProtocol
+    with FiniteDurationProtocol
     with BSONJsonProtocol
     with SprayJsonSupport {
   implicit object BuildStatusFormat extends JsonFormat[BuildStatus] {
@@ -74,4 +89,7 @@ trait JsonProtocol extends DefaultJsonProtocol
   implicit val projectFormat = jsonFormat10(Project)
   implicit val buildFormat = jsonFormat9(Build)
   implicit val outputFormat = jsonFormat5(Output)
+  implicit val dockerVersionFormat = jsonFormat4(DockerVersion)
+  implicit val dockerHostInfoFormat = jsonFormat5(DockerHostInfo)
+  implicit val workerFormat = jsonFormat6(Worker)
 }
