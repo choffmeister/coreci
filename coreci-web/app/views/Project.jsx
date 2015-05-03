@@ -18,13 +18,13 @@ var Project = React.createClass({
   },
 
   run: function () {
-    RestClient.post('/api/projects/' + this.props.data['projects-show'].project.canonicalName + '/run').then(build => {
+    RestClient.post('/api/projects/' + this.props.data.project.canonicalName + '/run').then(build => {
       this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
     });
   },
 
   render: function () {
-    var builds = this.props.data['projects-show'].builds.map(build => {
+    var builds = this.props.data.builds.map(build => {
       var duration = build.status.finishedAt && build.status.startedAt ?
         build.status.finishedAt - build.status.startedAt : undefined;
 
@@ -59,7 +59,7 @@ var Project = React.createClass({
       </table>
     );
 
-    var project = this.props.data['projects-show'].project;
+    var project = this.props.data.project;
     return (
       <div>
         <h1>Job {project.title}</h1>

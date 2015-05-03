@@ -13,7 +13,7 @@ var Builds = React.createClass({
   },
 
   render: function () {
-    var builds = this.props.data['builds-list'].builds.map(build => {
+    var builds = this.props.data.builds.map(build => {
       var duration = build.status.finishedAt && build.status.startedAt ?
         build.status.finishedAt - build.status.startedAt : undefined;
 

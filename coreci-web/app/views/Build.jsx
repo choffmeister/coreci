@@ -1,4 +1,5 @@
 var React = require('react'),
+    Bluebird = require('bluebird'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx'),
     Console = require('../components/Console.jsx');
@@ -18,23 +19,22 @@ var Build = React.createClass({
 
   getInitialState: function () {
     return {
-      build: this.props.data['builds-show'].build,
+      build: this.props.data.build,
       output: ''
     };
   },
 
   componentWillReceiveProps: function(nextProps) {
     this.setState({
-      build: nextProps.data['builds-show'].build,
+      build: nextProps.data.build,
       output: ''
     });
     window.clearTimeout(this.outputTimeout);
-    this.update(nextProps.data['builds-show'].build.projectCanonicalName, nextProps.data['builds-show'].build.number, false);
+    this.update(nextProps.data.build.projectCanonicalName, nextProps.data.build.number, false);
   },
 
   componentDidMount: function () {
-    console.log(this.props.data['builds-show'].build);
-    this.update(this.props.data['builds-show'].build.projectCanonicalName, this.props.data['builds-show'].build.number, false);
+    this.update(this.props.data.build.projectCanonicalName, this.props.data.build.number, false);
   },
 
   componentWillUnmount: function() {
@@ -92,25 +92,23 @@ var Build = React.createClass({
     var build = RestClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
     var output = RestClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + this.state.output.length, true);
 
-    Promise.all2({ build: build, output: output })
-      .then(res => {
-        if (this.props.data['builds-show'].build.projectCanonicalName == projectCanonicalName &&
-            this.props.data['builds-show'].build.number == buildNumber) {
-          this.setState({
-            build: res.build,
-            output: this.state.output + res.output
-          });
+    Bluebird.join(build, output, (build, output) => {
+      if (this.props.data.build.projectCanonicalName == projectCanonicalName && this.props.data.build.number == buildNumber) {
+        this.setState({
+          build: build,
+          output: this.state.output + output
+        });
 
-          if (scroll) {
-            this.refs.console.getDOMNode().scrollIntoView(false);
-          }
-          if (['succeeded', 'failed'].indexOf(res.build.status.type) < 0) {
-            this.outputTimeout = window.setTimeout(function () {
-              this.update(projectCanonicalName, buildNumber, true);
-            }.bind(this), 1000);
-          }
+        if (scroll) {
+          this.refs.console.getDOMNode().scrollIntoView(false);
         }
-      });
+        if (['succeeded', 'failed'].indexOf(build.status.type) < 0) {
+          this.outputTimeout = window.setTimeout(function () {
+            this.update(projectCanonicalName, buildNumber, true);
+          }.bind(this), 1000);
+        }
+      }
+    });
   }
 });
 

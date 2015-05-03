@@ -13,7 +13,7 @@ var Projects = React.createClass({
   },
 
   render: function () {
-    var projects = this.props.data['projects-list'].projects.map(project => (
+    var projects = this.props.data.projects.map(project => (
       <tr key={project.id}>
         <td><Link to="projects-show" params={{projectCanonicalName: project.canonicalName}}>{project.canonicalName}</Link></td>
       </tr>

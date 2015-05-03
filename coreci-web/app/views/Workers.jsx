@@ -11,7 +11,7 @@ var Workers = React.createClass({
   },
 
   render: function () {
-    var workers = this.props.data['workers-list'].workers.map(function (worker) {
+    var workers = this.props.data.workers.map(function (worker) {
       return (
         <tr key={worker.name}>
           <td>{worker.name}</td>
