@@ -20,8 +20,10 @@ var Builds = React.createClass({
       return (
         <tr key={build.id}>
           <td className="column-icon"><span className={'build-' + build.status.type}/></td>
-          <td><Link to="builds-show" params={{projectCanonicalName: build.projectCanonicalName, buildNumber: build.number}}>#{build.number}</Link></td>
-          <td><Link to="projects-show" params={{projectCanonicalName: build.projectCanonicalName}}>{build.projectCanonicalName}</Link></td>
+          <td>
+            <Link to="projects-show" params={{projectCanonicalName: build.projectCanonicalName}}>{build.projectCanonicalName}</Link>&nbsp;
+            <Link to="builds-show" params={{projectCanonicalName: build.projectCanonicalName, buildNumber: build.number}}>#{build.number}</Link>
+          </td>
           <td className="column-timestamp-relative hidden-xs">
             <span className="glyphicon glyphicon-calendar"/>&nbsp;
             <DateTime value={build.updatedAt} kind="relative"/>
@@ -39,7 +41,6 @@ var Builds = React.createClass({
           <tr>
             <th className="column-icon"></th>
             <th>build</th>
-            <th>job</th>
             <th className="column-timestamp-relative hidden-xs"></th>
             <th className="column-runtime-duration hidden-xs"></th>
           </tr>

@@ -62,7 +62,7 @@ var Project = React.createClass({
     var project = this.props.data.project;
     return (
       <div>
-        <h1>Job {project.title}</h1>
+        <h1>Project {project.title}</h1>
         <p><button onClick={this.run} className="btn btn-primary">RUN</button></p>
         <dl>
           <dt>Description</dt>
@@ -71,10 +71,10 @@ var Project = React.createClass({
           <dd><DateTime value={project.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>
           <dd><DateTime value={project.updatedAt} kind="relative"/></dd>
-          <dt>Docker image</dt>
+          <dt>Image</dt>
           <dd>{project.image}</dd>
           <dt>Command</dt>
-          <dd><pre>{JSON.stringify(project.command)}</pre></dd>
+          <dd><pre>{project.command.join(' ')}</pre></dd>
         </dl>
         {buildList}
       </div>

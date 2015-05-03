@@ -1,4 +1,5 @@
 var React = require('react'),
+    Link = require('react-router').Link,
     Bluebird = require('bluebird'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx'),
@@ -63,6 +64,12 @@ var Build = React.createClass({
           <dd><span className={'build-' + this.state.build.status.type}/></dd>
           <dt>Message</dt>
           <dd><pre>{message}</pre></dd>
+          <dt>Project</dt>
+          <dd><Link to="projects-show" params={{projectCanonicalName: this.state.build.projectCanonicalName}}>{this.state.build.projectCanonicalName}</Link></dd>
+          <dt>Image</dt>
+          <dd>{this.state.build.image}</dd>
+          <dt>Command</dt>
+          <dd><pre>{this.state.build.command.join(' ')}</pre></dd>
           <dt>Created at</dt>
           <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>
