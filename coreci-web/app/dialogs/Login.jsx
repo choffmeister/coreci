@@ -71,7 +71,7 @@ var Login = React.createClass({
     }
     return (
       <Modal {...this.props} bsStyle="default" title="Login" animation={false} backdrop={true}>
-        <form onSubmit={this.onSubmit} autoComplete="off">
+        <form autoComplete="off">
           <div className="modal-body">
             {message}
             <div className="form-group">

@@ -17,6 +17,15 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
         pageable { page =>
           complete(database.projects.list(page = page))
         }
+      } ~
+      post {
+        authenticate.bearerToken(acceptExpired = false) { user =>
+          entity(as[Project]) { project =>
+            complete {
+              database.projects.insert(project.copy(userId = user.id))
+            }
+          }
+        }
       }
     } ~
     pathPrefix(Segment) { projectCanonicalName =>

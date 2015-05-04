@@ -1,11 +1,11 @@
 var React = require('react'),
-  RestClient = require('../services/RestClient');
+    JsonClient = require('../services/HttpClient').Json();
 
-var Workers = React.createClass({
+var WorkersList = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        workers: RestClient.get('/api/workers')
+        workers: JsonClient.get('/api/workers')
       };
     }
   },
@@ -41,4 +41,4 @@ var Workers = React.createClass({
   }
 });
 
-module.exports = Workers;
+module.exports = WorkersList;

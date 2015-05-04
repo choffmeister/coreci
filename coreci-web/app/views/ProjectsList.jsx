@@ -1,13 +1,13 @@
 var React = require('react'),
     Link = require('react-router').Link,
-    RestClient = require('../services/RestClient'),
-    DateTime = require('../components/DateTime.jsx');
+    DateTime = require('../components/DateTime.jsx'),
+    JsonClient = require('../services/HttpClient').Json();
 
-var Projects = React.createClass({
+var ProjectsList = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        projects: RestClient.get('/api/projects')
+        projects: JsonClient.get('/api/projects')
       };
     }
   },
@@ -33,4 +33,4 @@ var Projects = React.createClass({
   }
 });
 
-module.exports = Projects;
+module.exports = ProjectsList;
