@@ -77,11 +77,15 @@ gulp.task('assets-favicon', function () {
   return gulp.src('./app/favicon.ico')
     .pipe(gulp.dest(config.dest()));
 });
-gulp.task('assets-bootstrap-font', function () {
+gulp.task('assets-glyphicons-font', function () {
   return gulp.src('./node_modules/bootstrap/fonts/*.*')
-    .pipe(gulp.dest(config.dest('app/fonts')));
+    .pipe(gulp.dest(config.dest('app/fonts/glyphicons')));
 });
-gulp.task('assets', ['assets-favicon', 'assets-bootstrap-font']);
+gulp.task('assets-roboto-font', function () {
+  return gulp.src('./node_modules/roboto-fontface/fonts/*.*')
+    .pipe(gulp.dest(config.dest('app/fonts/roboto')));
+});
+gulp.task('assets', ['assets-favicon', 'assets-glyphicons-font', 'assets-roboto-font']);
 
 gulp.task('connect', ['build'], function (next) {
   var serveStatic = require('serve-static');
