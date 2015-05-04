@@ -1,9 +1,10 @@
 var React = require('react'),
     Link = require('react-router').Link,
     Bluebird = require('bluebird'),
-    RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx'),
-    Console = require('../components/Console.jsx');
+    Console = require('../components/Console.jsx'),
+    HttpClient = require('../services/HttpClient').Raw(),
+    JsonClient = require('../services/HttpClient').Json();
 
 var BuildsShow = React.createClass({
   contextTypes: {
@@ -13,7 +14,7 @@ var BuildsShow = React.createClass({
   statics: {
     fetchData: function (params) {
       return {
-        build: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber)
+        build: JsonClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber)
       };
     }
   },
@@ -43,7 +44,7 @@ var BuildsShow = React.createClass({
   },
 
   rerun: function () {
-    RestClient.post('/api/builds/' + this.state.build.id + '/rerun').then(build => {
+    JsonClient.post('/api/builds/' + this.state.build.id + '/rerun').then(build => {
       this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
     });
   },
@@ -96,8 +97,8 @@ var BuildsShow = React.createClass({
   },
 
   update: function (projectCanonicalName, buildNumber, scroll) {
-    var build = RestClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
-    var output = RestClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + this.state.output.length, true);
+    var build = JsonClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
+    var output = HttpClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + this.state.output.length, true);
 
     Bluebird.join(build, output, (build, output) => {
       if (this.props.data.build.projectCanonicalName == projectCanonicalName && this.props.data.build.number == buildNumber) {

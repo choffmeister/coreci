@@ -1,13 +1,13 @@
 var React = require('react'),
     Link = require('react-router').Link,
-    RestClient = require('../services/RestClient'),
-    DateTime = require('../components/DateTime.jsx');
+    DateTime = require('../components/DateTime.jsx'),
+    JsonClient = require('../services/HttpClient').Json();
 
 var BuildsList = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        builds: RestClient.get('/api/builds')
+        builds: JsonClient.get('/api/builds')
       };
     }
   },
