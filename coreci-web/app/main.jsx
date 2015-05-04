@@ -8,6 +8,7 @@ var React = require('react'),
 var App = require('./components/App.jsx'),
     ProjectsList = require('./views/ProjectsList.jsx'),
     ProjectsShow = require('./views/ProjectsShow.jsx'),
+    ProjectsCreate = require('./views/ProjectsCreate.jsx'),
     BuildsList = require('./views/BuildsList.jsx'),
     BuildsShow = require('./views/BuildsShow.jsx'),
     WorkersList = require('./views/WorkersList.jsx');
@@ -16,6 +17,7 @@ var routes = (
   <Route name="app" handler={App} path="/">
     <Route name="projects-list" handler={ProjectsList} path="/projects"/>
     <Route name="projects-show" handler={ProjectsShow} path="/projects/:projectCanonicalName"/>
+    <Route name="projects-create" handler={ProjectsCreate} path="/create"/>
     <Route name="builds-list" handler={BuildsList} path="/builds"/>
     <Route name="builds-show" handler={BuildsShow} path="/projects/:projectCanonicalName/builds/:buildNumber"/>
     <Route name="workers-list" handler={WorkersList} path="/workers"/>

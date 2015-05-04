@@ -35,7 +35,10 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
   }
 
   override def configure(): Future[Unit] = {
-    collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending))).map(_ => ())
+    Future.sequence(Seq(
+      collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending))),
+      collection.indexesManager.ensure(Index(List("canonicalName" -> IndexType.Ascending), unique = true))
+    )).map(_ => ())
   }
 
   def list(page: (Option[Int], Option[Int])): Future[List[Project]] =
