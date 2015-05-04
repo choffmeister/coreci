@@ -4,6 +4,16 @@ var React = require('react'),
     Input = require('react-bootstrap').Input,
     JsonClient = require('../services/HttpClient').Json();
 
+var slugify = function (text) {
+  return text
+    .toLowerCase()
+    .replace(/\s/g, '-')
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/\-{2,}/g, '-')
+    .replace(/^\-+/, '')
+    .replace(/\-+$/, '');
+};
+
 var ProjectsCreate = React.createClass({
   mixins: [ReactAddons.LinkedStateMixin],
 
@@ -20,16 +30,8 @@ var ProjectsCreate = React.createClass({
     };
   },
 
-  onSubmit: function () {
-    var slugify = function (text) {
-      return text
-        .toLowerCase()
-        .replace(/\s/g, '-')
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/\-{2,}/g, '-')
-        .replace(/^\-+/, '')
-        .replace(/\-+$/, '');
-    };
+  onSubmit: function (event) {
+    event.preventDefault();
 
     var project = {
       title: this.state.title,
@@ -53,7 +55,7 @@ var ProjectsCreate = React.createClass({
     return (
       <div>
         <h1>Create project</h1>
-        <form>
+        <form onSubmit={this.onSubmit}>
           <Input type="text" label="Title" valueLink={this.linkState('title')}/>
           <Input type="textarea" label="Description" valueLink={this.linkState('description')} rows="6"/>
           <Input type="text" label="Image" valueLink={this.linkState('image')}/>
