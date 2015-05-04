@@ -3,7 +3,7 @@ var React = require('react'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx');
 
-var Project = React.createClass({
+var ProjectsShow = React.createClass({
   contextTypes: {
     router: React.PropTypes.func
   },
@@ -82,4 +82,4 @@ var Project = React.createClass({
   }
 });
 
-module.exports = Project;
+module.exports = ProjectsShow;

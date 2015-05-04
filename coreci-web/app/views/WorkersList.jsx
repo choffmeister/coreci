@@ -1,7 +1,7 @@
 var React = require('react'),
-  RestClient = require('../services/RestClient');
+    RestClient = require('../services/RestClient');
 
-var Workers = React.createClass({
+var WorkersList = React.createClass({
   statics: {
     fetchData: function () {
       return {
@@ -41,4 +41,4 @@ var Workers = React.createClass({
   }
 });
 
-module.exports = Workers;
+module.exports = WorkersList;

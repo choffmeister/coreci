@@ -5,7 +5,7 @@ var React = require('react'),
     DateTime = require('../components/DateTime.jsx'),
     Console = require('../components/Console.jsx');
 
-var Build = React.createClass({
+var BuildsShow = React.createClass({
   contextTypes: {
     router: React.PropTypes.func
   },
@@ -119,4 +119,4 @@ var Build = React.createClass({
   }
 });
 
-module.exports = Build;
+module.exports = BuildsShow;

@@ -3,7 +3,7 @@ var React = require('react'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx');
 
-var Builds = React.createClass({
+var BuildsList = React.createClass({
   statics: {
     fetchData: function () {
       return {
@@ -59,4 +59,4 @@ var Builds = React.createClass({
   }
 });
 
-module.exports = Builds;
+module.exports = BuildsList;

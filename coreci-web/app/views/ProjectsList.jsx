@@ -3,7 +3,7 @@ var React = require('react'),
     RestClient = require('../services/RestClient'),
     DateTime = require('../components/DateTime.jsx');
 
-var Projects = React.createClass({
+var ProjectsList = React.createClass({
   statics: {
     fetchData: function () {
       return {
@@ -33,4 +33,4 @@ var Projects = React.createClass({
   }
 });
 
-module.exports = Projects;
+module.exports = ProjectsList;
