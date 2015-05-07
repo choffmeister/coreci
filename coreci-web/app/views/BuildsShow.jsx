@@ -26,21 +26,44 @@ var BuildsShow = React.createClass({
     };
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  componentDidMount: function () {
+    this.update(this.props.data.build.projectCanonicalName, this.props.data.build.number);
+    window.addEventListener('resize', this.updateConsoleHeight);
+    this.updateConsoleHeight();
+  },
+
+  componentWillUnmount: function() {
+    window.clearTimeout(this.outputTimeout);
+    window.removeEventListener('resize', this.updateConsoleHeight);
+  },
+
+  componentDidUpdate: function () {
+    this.updateConsoleHeight();
+  },
+
+  componentWillReceiveProps: function (nextProps) {
     this.setState({
       build: nextProps.data.build,
       output: ''
     });
     window.clearTimeout(this.outputTimeout);
-    this.update(nextProps.data.build.projectCanonicalName, nextProps.data.build.number, false);
+    this.update(nextProps.data.build.projectCanonicalName, nextProps.data.build.number);
   },
 
-  componentDidMount: function () {
-    this.update(this.props.data.build.projectCanonicalName, this.props.data.build.number, false);
+  updateConsoleHeight: function () {
+    var body = document.body;
+    var element = this.refs.console.getDOMNode();
+
+    var windowHeight = window.innerHeight;
+    var bodyHeight = body.clientHeight;
+    var elementHeight = element.clientHeight;
+
+    element.style.height = Math.max(windowHeight - bodyHeight + elementHeight - 1, 200) + 'px';
   },
 
-  componentWillUnmount: function() {
-    window.clearTimeout(this.outputTimeout);
+  scrollConsoleToEnd: function () {
+    var element = this.refs.console.getDOMNode();
+    element.scrollTop = element.scrollHeight;
   },
 
   rerun: function () {
@@ -96,7 +119,7 @@ var BuildsShow = React.createClass({
     );
   },
 
-  update: function (projectCanonicalName, buildNumber, scroll) {
+  update: function (projectCanonicalName, buildNumber) {
     var build = JsonClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
     var output = HttpClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + this.state.output.length, true);
 
@@ -106,13 +129,11 @@ var BuildsShow = React.createClass({
           build: build,
           output: this.state.output + output
         });
+        this.scrollConsoleToEnd();
 
-        if (scroll) {
-          this.refs.console.getDOMNode().scrollIntoView(false);
-        }
         if (['succeeded', 'failed'].indexOf(build.status.type) < 0) {
           this.outputTimeout = window.setTimeout(function () {
-            this.update(projectCanonicalName, buildNumber, true);
+            this.update(projectCanonicalName, buildNumber);
           }.bind(this), 1000);
         }
       }
