@@ -27,6 +27,18 @@ case class DockerHostInfo(
   memory: Long,
   kernelVersion: String)
 
+case class DockerContainerInspection(
+  id: String,
+  stateExitCode: Int)
+
+sealed trait DockerBuildOutput
+case class DockerBuildStream(message: String) extends DockerBuildOutput
+case class DockerBuildStatus(message: String) extends DockerBuildOutput
+case class DockerBuildError(message: String) extends DockerBuildOutput
+case class DockerBuild(imageName: String, stream: Source[DockerBuildOutput, Any])
+
+case class DockerRun(containerId: String, stream: Source[ByteString, Any])
+
 /**
  * Docker remote client
  * See https://docs.docker.com/reference/api/docker_remote_api_v1.17/
@@ -40,36 +52,55 @@ case class DockerHostInfo(
 class Docker(host: String, port: Int)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   def version(): Future[DockerVersion] = {
-    request(GET, Uri("/version")).flatMap(parseResponseBodyAsJson).map(DockerJsonProtocol.readVersion)
+    jsonRequest(GET, Uri("/version")).map(_.get.asJsObject).map(DockerJsonProtocol.readVersion)
   }
 
   def info(): Future[DockerHostInfo] = {
-    request(GET, Uri("/info")).flatMap(parseResponseBodyAsJson).map(DockerJsonProtocol.readHostInfo)
+    jsonRequest(GET, Uri("/info")).map(_.get.asJsObject).map(DockerJsonProtocol.readHostInfo)
   }
 
   def ping(): Future[FiniteDuration] = {
     val start = System.nanoTime()
-    request(GET, Uri("/_ping")).flatMap(drainResponseBody).map { _ =>
+    jsonRequest(GET, Uri("/_ping")).map(_ => ()).map { _ =>
       val end = System.nanoTime()
       FiniteDuration(end - start, TimeUnit.NANOSECONDS)
     }
   }
 
-  def runContainerWith[T](
-      repository: String,
-      command: List[String],
-      sink: Sink[(Long, ByteString), Future[T]]): Future[(T, JsObject)] = {
-    createContainer(repository, command).flatMap { id =>
-      val future = for {
-        s <- attachToContainer(id)
-        _ <- startContainer(id)
-        m <- withIndex(s).runWith(sink)
-        i <- inspectContainer(id)
-      } yield (m, i)
+  def buildImage[T](tar: Source[ByteString, Unit], name: Option[String] = None, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
+    val nameOrRandom = name.getOrElse(java.util.UUID.randomUUID().toString)
+    val uri = Uri(s"/build?t=$nameOrRandom&forcerm=1&nocache=$noCache")
+    val entity = HttpEntity.Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
 
-      future.onComplete { case _ => deleteContainer(id) }
-      future
+    rawRequest(POST, uri, entity = entity)
+      .map { res =>
+        val stream = res.entity.dataBytes.map(_.utf8String).map { s =>
+          try {
+            JsonParser(ParserInput(s)).asJsObject.fields.toList.sortBy(_._1) match {
+              case ("status", JsString(message)) :: Nil => DockerBuildStatus(message)
+              case ("stream", JsString(message)) :: Nil => DockerBuildStream(message)
+              case ("error", JsString(message)) :: ("errorDetail", _) :: Nil => DockerBuildError(message)
+              case _ => DockerBuildError(s"Invalid output $s")
+            }
+          } catch {
+            case ex: JsonParser.ParsingException => DockerBuildError(s"Invalid output $s")
+          }
+        }
+        DockerBuild(nameOrRandom, stream)
     }
+  }
+
+  def deleteImage(name: String, force: Boolean = false, noPrune: Boolean = false): Future[Unit] = {
+    log.debug(s"Deleting image $name")
+    jsonRequest(DELETE, Uri(s"/images/$name?force=$force&noprune=$noPrune")).map(_ => ())
+  }
+
+  def runImage[T](repository: String, command: List[String]): Future[DockerRun] = {
+    for {
+      id <- createContainer(repository, command)
+      s <- attachToContainer(id)
+      _ <- startContainer(id)
+    } yield DockerRun(id, s)
   }
 
   def createContainer(repository: String, command: List[String]): Future[String] = {
@@ -80,8 +111,8 @@ class Docker(host: String, port: Int)
     )
 
     log.debug(s"Creating container from $repository")
-    request(POST, Uri("/containers/create"), Some(payload))
-      .flatMap(parseResponseBodyAsJson)
+    jsonRequest(POST, Uri("/containers/create"), Some(payload))
+      .map(_.get.asJsObject)
       .map { json =>
         val id = json.fields("Id").asInstanceOf[JsString].value
         log.info(s"Created container $id")
@@ -89,61 +120,55 @@ class Docker(host: String, port: Int)
       }
   }
 
-  def deleteContainer(id: String): Future[Unit] = {
+  def deleteContainer(id: String, force: Boolean = false): Future[Unit] = {
     log.debug(s"Deleting container $id")
-    request(DELETE, Uri(s"/containers/$id")).flatMap(drainResponseBody)
+    jsonRequest(DELETE, Uri(s"/containers/$id?force=$force")).map(_ => ())
   }
 
-  def inspectContainer(id: String): Future[JsObject] = {
-    request(GET, Uri(s"/containers/$id/json")).flatMap(parseResponseBodyAsJson)
+  def inspectContainer(id: String): Future[DockerContainerInspection] = {
+    jsonRequest(GET, Uri(s"/containers/$id/json")).map(_.get.asJsObject).map(DockerJsonProtocol.readContainerInspection)
   }
 
   def startContainer(id: String): Future[Unit] = {
     log.debug(s"Starting container $id")
-    request(POST, Uri(s"/containers/$id/start")).flatMap(drainResponseBody)
+    jsonRequest(POST, Uri(s"/containers/$id/start")).map(_ => ())
   }
 
   def attachToContainer(id: String): Future[Source[ByteString, Any]] = {
-    request(POST, Uri(s"/containers/$id/attach?logs=true&stream=true&stdout=true&stderr=true")).map(_.entity.dataBytes)
+    rawRequest(POST, Uri(s"/containers/$id/attach?logs=true&stream=true&stdout=true&stderr=true")).map(_.entity.dataBytes)
   }
 
-  private def parseResponseBodyAsJson(response: HttpResponse): Future[JsObject] = {
-    response.entity.toStrict(10.seconds).map(_.data.utf8String).map { s =>
-      JsonParser(ParserInput(s)).asJsObject
-    }
+  private def rawRequest(
+      method: HttpMethod,
+      uri: Uri,
+      entity: RequestEntity = HttpEntity.Empty): Future[HttpResponse] = {
+    Source.single(HttpRequest(method, uri, entity = entity)).via(Http().outgoingConnection(host, port)).runWith(Sink.head)
   }
 
-  private def drainResponseBody(response: HttpResponse): Future[Unit] = {
-    response.entity.dataBytes.runFold(())((_, _) => ())
-  }
-
-  private def request(
+  private def jsonRequest(
       method: HttpMethod,
       uri: Uri,
       payload: Option[JsObject] = None,
-      errorMap: PartialFunction[HttpResponse, Exception] = PartialFunction.empty): Future[HttpResponse] = {
-    val ent = payload.map(p => HttpEntity(p.toString())).getOrElse(HttpEntity.Empty).withContentType(ContentTypes.`application/json`)
-    val req = HttpRequest(method, uri, entity = ent)
-    Source.single(req).via(Http().outgoingConnection(host, port))
+      errorMap: PartialFunction[HttpResponse, Exception] = PartialFunction.empty): Future[Option[JsValue]] = {
+    val entity = payload.map(p => HttpEntity(p.toString())).getOrElse(HttpEntity.Empty).withContentType(ContentTypes.`application/json`)
+
+    Source.single(HttpRequest(method, uri, entity = entity)).via(Http().outgoingConnection(host, port))
       .runWith(Sink.head)
       .flatMap {
-        case res if res.status.isSuccess() => Future(res)
-        case res => res.toStrict(3.second).flatMap { res =>
-          if (errorMap.isDefinedAt(res))
-            Future.failed(errorMap(res))
-          else
-            res.entity.toStrict(3.second).flatMap(body => Future.failed(new Exception(body.data.utf8String)))
-        }
+        case res if res.status.isSuccess() =>
+          res.entity.toStrict(3.second).map {
+            case body if body.data == ByteString("OK") => Some(JsString("OK"))
+            case body if body.data.length > 0 => Some(JsonParser(ParserInput(body.data.utf8String)))
+            case _ => None
+          }
+        case res =>
+          res.toStrict(3.second).flatMap { res =>
+            if (errorMap.isDefinedAt(res))
+              Future.failed(errorMap(res))
+            else
+              res.entity.toStrict(3.second).flatMap(body => Future.failed(new Exception(body.data.utf8String)))
+          }
       }
-  }
-
-  private def withIndex[T, Mat](source: Source[T, Mat]): Source[(Long, T), Mat] = {
-    var index = 0L
-    source.map { item =>
-      val res = (index, item)
-      index = index + 1
-      res
-    }
   }
 }
 
@@ -171,7 +196,7 @@ object DockerJsonProtocol extends DefaultJsonProtocol {
           version = version,
           gitCommit = gitCommit,
           goVersion = goVersion)
-      case _ => throw new DeserializationException("Expected Docker version JSON object")
+      case _ => jsonError("version")
     }
 
   def readHostInfo(value: JsValue): DockerHostInfo =
@@ -183,6 +208,21 @@ object DockerJsonProtocol extends DefaultJsonProtocol {
           cpus = cpus.toInt,
           memory = memory.toLong,
           kernelVersion = kernelVersion)
-      case _ => throw new DeserializationException("Expected Docker host info JSON object")
+      case _ => jsonError("host info")
     }
+
+  def readContainerInspection(value: JsValue): DockerContainerInspection =
+    value.asJsObject.getFields("Id", "State") match {
+      case Seq(JsString(id), state: JsObject) =>
+        state.getFields("ExitCode") match {
+          case Seq(JsNumber(stateExitCode)) =>
+            DockerContainerInspection(
+              id = id,
+              stateExitCode = stateExitCode.toInt)
+          case _ => jsonError("container inspection")
+        }
+      case _ => jsonError("container inspection")
+    }
+
+  private def jsonError(expectedName: String) = throw new DeserializationException(s"Expected Docker $expectedName JSON object")
 }

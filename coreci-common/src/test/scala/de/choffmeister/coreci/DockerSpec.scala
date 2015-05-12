@@ -36,13 +36,57 @@ class DockerSpec extends Specification with NoTimeConversions {
       }
     }
 
-    "create, start and attach to container" in new TestActorSystem {
+    "build images" in new TestActorSystem {
+      within(5.seconds) {
+        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val dockerfile = Dockerfile.from("busybox", Some("latest"))
+          .run("uname -a")
+          .run("echo hello world")
+
+        val future = for {
+          build <- docker.buildImage(dockerfile.asTar, forceRemove = true, noCache = true)
+          result <- build.stream.runFold(("", 0)) {
+            case (acc, DockerBuildStream(msg)) => (acc._1 + msg, acc._2)
+            case (acc, DockerBuildStatus(msg)) => (acc._1 + msg, acc._2)
+            case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
+          }.andThen { case _ => docker.deleteImage(build.imageName, force = true) }
+        } yield result
+
+        await(future)._1 must contain("GNU/Linux")
+        await(future)._1 must contain("hello world")
+        await(future)._2 === 0
+      }
+
+      within(5.seconds) {
+        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val dockerfile = Dockerfile.from("busybox", Some("latest"))
+          .run("uname -a")
+          .run("unknown command")
+
+        val future = for {
+          build <- docker.buildImage(dockerfile.asTar, forceRemove = true, noCache = true).andThen { case x => println(x) }
+          result <- build.stream.runFold(("", 0)) {
+            case (acc, DockerBuildStream(msg)) => (acc._1 + msg, acc._2)
+            case (acc, DockerBuildStatus(msg)) => (acc._1 + msg, acc._2)
+            case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
+          }.andThen { case _ => docker.deleteImage(build.imageName, force = true) }
+        } yield result
+
+        await(future)._1 must contain("GNU/Linux")
+        await(future)._2 === 1
+      }
+    }
+
+    "run images" in new TestActorSystem {
       within(5.seconds) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val command = "uname" :: "-a" :: Nil
-        val future = docker.runContainerWith("busybox:latest", command, Sink.fold("")((acc, chunk) => acc + chunk._2.utf8String))
+        val future  = for {
+          run <- docker.runImage("busybox:latest", command)
+          output <- run.stream.runFold("")(_ + _.utf8String).andThen { case _ => docker.deleteContainer(run.containerId, force = true) }
+        } yield output
 
-        await(future)._1 must contain("GNU/Linux")
+        await(future) must contain("GNU/Linux")
       }
     }
   }
