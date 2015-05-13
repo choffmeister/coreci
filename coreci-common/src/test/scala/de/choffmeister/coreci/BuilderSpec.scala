@@ -8,7 +8,7 @@ import reactivemongo.bson.BSONObjectID
 class BuilderSpec extends Specification with NoTimeConversions {
   "Builder" should {
     "runs successful builds" in new TestActorSystem {
-      TestDatabase { db =>
+      TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
@@ -28,7 +28,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
     }
 
     "runs failing builds" in new TestActorSystem {
-      TestDatabase { db =>
+      TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
@@ -47,7 +47,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
     }
 
     "runs erroring builds" in new TestActorSystem {
-      TestDatabase { db =>
+      TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
