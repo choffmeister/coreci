@@ -23,7 +23,7 @@ class BuildRoutes(val database: Database, workerHandler: ActorRef)
         case Some(build) =>
           path("rerun") {
             post {
-              authenticate.bearerToken(acceptExpired = false) { user =>
+              authenticate() { user =>
                 complete {
                   database.builds.insert(build.copy(status = Pending)).map { renewedBuild =>
                     workerHandler ! WorkerHandlerProtocol.DispatchBuild

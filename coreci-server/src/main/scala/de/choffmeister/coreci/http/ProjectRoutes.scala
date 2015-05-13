@@ -19,7 +19,7 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
         }
       } ~
       post {
-        authenticate.bearerToken(acceptExpired = false) { user =>
+        authenticate() { user =>
           entity(as[Project]) { project =>
             complete {
               database.projects.insert(project.copy(userId = user.id))
@@ -38,7 +38,7 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
           } ~
           path("run") {
             post {
-              authenticate.bearerToken(acceptExpired = false) { user =>
+              authenticate() { user =>
                 complete {
                   database.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)).map { build =>
                     workerHandler ! WorkerHandlerProtocol.DispatchBuild
