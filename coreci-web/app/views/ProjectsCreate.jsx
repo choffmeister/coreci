@@ -26,7 +26,7 @@ var ProjectsCreate = React.createClass({
       title: 'My project',
       description: '',
       image: 'busybox:latest',
-      command: '["uname", "-a"]'
+      script: '#!/bin/sh -e\n\necho hello world\n\nexit 0\n'
     };
   },
 
@@ -38,7 +38,7 @@ var ProjectsCreate = React.createClass({
       canonicalName: slugify(this.state.title),
       description: this.state.description,
       image: this.state.image,
-      command: JSON.parse(this.state.command),
+      script: this.state.script,
       id: '000000000000000000000000',
       userId: '000000000000000000000000',
       nextBuildNumber: 1,
@@ -59,7 +59,7 @@ var ProjectsCreate = React.createClass({
           <Input type="text" label="Title" valueLink={this.linkState('title')}/>
           <Input type="textarea" label="Description" valueLink={this.linkState('description')} rows="6"/>
           <Input type="text" label="Image" valueLink={this.linkState('image')}/>
-          <Input type="text" label="Command" valueLink={this.linkState('command')}/>
+          <Input type="textarea" label="Script" valueLink={this.linkState('script')} rows="10"/>
           <Button onClick={this.onSubmit} type="submit">Create</Button>
         </form>
       </div>

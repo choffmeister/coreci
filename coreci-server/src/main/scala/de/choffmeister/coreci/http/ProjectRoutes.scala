@@ -40,7 +40,7 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
             post {
               authenticate.bearerToken(acceptExpired = false) { user =>
                 complete {
-                  database.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)).map { build =>
+                  database.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)).map { build =>
                     workerHandler ! WorkerHandlerProtocol.DispatchBuild
                     build
                   }

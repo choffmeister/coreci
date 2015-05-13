@@ -16,21 +16,45 @@ class Builder(db: Database, docker: Docker)
   val config = Config.load()
 
   def run(pending: Build): Future[Build] = {
-    log.info(s"Running command ${pending.command} on image ${pending.image}")
+    log.info(s"Running build ${pending.id} on image ${pending.image}")
     val startedAt = now
+    val dockerfile = Dockerfile.from(pending.image)
+      .add(".", "/coreci")
+      .run("chmod +x /coreci/build")
+    val context = Dockerfile.toTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
 
-    val outputFlow = Flow[ByteString]
+    def prepareOutputFlow(startIndex: Long) = Flow[DockerBuildOutput]
+      .map {
+        case DockerBuildStream(msg) => msg
+        case DockerBuildStatusProgress("Downloading") => ""
+        case DockerBuildStatusProgress("Extracting") => ""
+        case DockerBuildStatusProgress(msg) => msg + "\n"
+        case DockerBuildStatus(msg) => msg + "\n"
+        case DockerBuildError(msg) => msg + "\n"
+      }
+      .groupedWithin(config.builderOutputGroupMaxCount, config.builderOutputGroupMaxDuration)
+      .map(_.foldLeft("")(_ + _))
+      .transform(() => new IndexStage(startIndex))
+      .mapAsync(1) {
+        case (cont, i) => db.outputs.insert(Output(buildId = pending.id, index = i, content = cont))
+      }
+
+    def runOutputFlow(startIndex: Long) = Flow[ByteString]
       .groupedWithin(config.builderOutputGroupMaxCount, config.builderOutputGroupMaxDuration)
       .map(_.foldLeft(ByteString.empty)(_ ++ _))
-      .transform(() => new IndexStage(0))
-      .mapAsync(1) { case (content, index) =>
-        db.outputs.insert(Output(buildId = pending.id, index = index, content = content.utf8String))
+      .transform(() => new IndexStage(startIndex))
+      .mapAsync(1) {
+        case (cont, i) => db.outputs.insert(Output(buildId = pending.id, index = i, content = cont.utf8String))
       }
 
     val finished = for {
       started <- db.builds.update(pending.copy(status = Running(startedAt)))
-      run <- docker.runImage(pending.image, pending.command)
-      done <- run.stream.via(outputFlow).runWith(Sink.fold(())((_, _) => ())).andThen { case _ => docker.deleteContainer(run.containerId) }
+      prepare <- docker.buildImage(context, pull = true, forceRemove = true, noCache = true)
+      lastPrepareIndex <- prepare.stream.via(prepareOutputFlow(0L)).runFold(0L)((_, s) => s.index + 1)
+      run <- docker.runImage(prepare.imageName, "/coreci/build" :: Nil)
+      lastRunIndex <- run.stream.via(runOutputFlow(lastPrepareIndex)).runFold(0L)((_, s) => s.index)
+        .andThen { case _ => docker.deleteContainer(run.containerId, force = true) }
+        .andThen { case _ => docker.deleteImage(prepare.imageName, force = true) }
       info <- docker.inspectContainer(run.containerId)
       finished <- info.stateExitCode match {
         case 0 => db.builds.update(pending.copy(status = Succeeded(startedAt, now)))

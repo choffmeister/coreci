@@ -40,7 +40,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     "build images" in new TestActorSystem {
       within(5.seconds) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
-        val dockerfile = Dockerfile.from("busybox", Some("latest"))
+        val dockerfile = Dockerfile.from("busybox:latest")
           .run("uname -a")
           .run("echo hello world")
 
@@ -60,7 +60,7 @@ class DockerSpec extends Specification with NoTimeConversions {
 
       within(5.seconds) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
-        val dockerfile = Dockerfile.from("busybox", Some("latest"))
+        val dockerfile = Dockerfile.from("busybox:latest")
           .run("uname -a")
           .run("unknown command")
 
@@ -81,7 +81,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     "build images with context" in new TestActorSystem {
       within(5.seconds) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
-        val dockerfile = Dockerfile.from("busybox", Some("latest"))
+        val dockerfile = Dockerfile.from("busybox:latest")
           .add(".", "/context")
           .run("sh /context/test.sh")
         val context = Map("test.sh" -> ByteString("#!/bin/sh -e\n\necho hello\necho world\necho !!!"))

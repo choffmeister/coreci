@@ -92,8 +92,8 @@ var BuildsShow = React.createClass({
           <dd><Link to="projects-show" params={{projectCanonicalName: this.state.build.projectCanonicalName}}>{this.state.build.projectCanonicalName}</Link></dd>
           <dt>Image</dt>
           <dd>{this.state.build.image}</dd>
-          <dt>Command</dt>
-          <dd><pre>{this.state.build.command.join(' ')}</pre></dd>
+          <dt>Script</dt>
+          <dd><pre>{this.state.build.script}</pre></dd>
           <dt>Created at</dt>
           <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>

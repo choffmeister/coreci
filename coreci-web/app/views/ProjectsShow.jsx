@@ -74,8 +74,8 @@ var ProjectsShow = React.createClass({
           <dd><DateTime value={project.updatedAt} kind="relative"/></dd>
           <dt>Image</dt>
           <dd>{project.image}</dd>
-          <dt>Command</dt>
-          <dd><pre>{project.command.join(' ')}</pre></dd>
+          <dt>Script</dt>
+          <dd><pre>{project.script}</pre></dd>
         </dl>
         {buildList}
       </div>

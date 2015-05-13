@@ -19,7 +19,7 @@ case class Build(
   number: Int = 0,
   status: BuildStatus = Pending,
   image: String,
-  command: List[String],
+  script: String,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0),
   projectCanonicalName: String = "") extends BaseModel
@@ -122,7 +122,7 @@ object BuildJSONFormat {
       number = doc.getAs[Int]("number").get,
       status = doc.getAs[BuildStatus]("status").get,
       image = doc.getAs[String]("image").get,
-      command = doc.getAs[List[String]]("command").get,
+      script = doc.getAs[String]("script").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
       projectCanonicalName = doc.getAs[String]("projectCanonicalName").get
@@ -136,7 +136,7 @@ object BuildJSONFormat {
       "number" -> obj.number,
       "status" -> obj.status,
       "image" -> obj.image,
-      "command" -> obj.command,
+      "script" -> obj.script,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt,
       "projectCanonicalName" -> obj.projectCanonicalName

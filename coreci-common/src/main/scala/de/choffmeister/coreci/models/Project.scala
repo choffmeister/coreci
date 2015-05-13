@@ -14,7 +14,7 @@ case class Project(
   title: String,
   description: String,
   image: String,
-  command: List[String],
+  script: String,
   nextBuildNumber: Int = 1,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
@@ -69,7 +69,7 @@ object ProjectBSONFormat {
       title = doc.getAs[String]("title").get,
       description = doc.getAs[String]("description").get,
       image = doc.getAs[String]("image").get,
-      command = doc.getAs[List[String]]("command").get,
+      script = doc.getAs[String]("script").get,
       nextBuildNumber = doc.getAs[Int]("nextBuildNumber").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
@@ -84,7 +84,7 @@ object ProjectBSONFormat {
       "title" -> obj.title,
       "description" -> obj.description,
       "image" -> obj.image,
-      "command" -> obj.command,
+      "script" -> obj.script,
       "nextBuildNumber" -> obj.nextBuildNumber,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt

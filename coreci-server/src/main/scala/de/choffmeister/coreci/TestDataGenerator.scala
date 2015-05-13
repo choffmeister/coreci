@@ -30,16 +30,16 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     title = s"Project $i",
     description = s"This is Project #$i",
     image = "node:0.10",
-    command = i match {
-      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--no-spin" :: Nil
-      case _ => "uname" :: "-a" :: Nil
+    script = i match {
+      case 1 => "#!/bin/bash\n\nnpm install -g gulp --no-spin\n"
+      case _ => "#!/bin/bash\n\nuname -a\n"
     })
 
   private def build(project: Project, i: Int) = Build(
     projectId = project.id,
     status = Succeeded(now, now),
     image = project.image,
-    command = project.command)
+    script = project.script)
 
   private def output(build: Build, i: Int) = Output(
     buildId = build.id,

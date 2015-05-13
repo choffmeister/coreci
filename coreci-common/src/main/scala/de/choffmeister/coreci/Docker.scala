@@ -34,6 +34,7 @@ case class DockerContainerInspection(
 sealed trait DockerBuildOutput
 case class DockerBuildStream(message: String) extends DockerBuildOutput
 case class DockerBuildStatus(message: String) extends DockerBuildOutput
+case class DockerBuildStatusProgress(message: String) extends DockerBuildOutput
 case class DockerBuildError(message: String) extends DockerBuildOutput
 case class DockerBuild(imageName: String, stream: Source[DockerBuildOutput, Any])
 
@@ -67,26 +68,47 @@ class Docker(host: String, port: Int)
     }
   }
 
-  def buildImage[T](tar: Source[ByteString, Unit], name: Option[String] = None, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
+  def buildImage[T](tar: Source[ByteString, Unit], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
     val nameOrRandom = name.getOrElse(java.util.UUID.randomUUID().toString)
-    val uri = Uri(s"/build?t=$nameOrRandom&forcerm=1&nocache=$noCache")
+    val uri = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=1&nocache=$noCache")
     val entity = HttpEntity.Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
 
-    rawRequest(POST, uri, entity = entity)
-      .map { res =>
-        val stream = res.entity.dataBytes.map(_.utf8String).map { s =>
-          try {
-            JsonParser(ParserInput(s)).asJsObject.fields.toList.sortBy(_._1) match {
-              case ("status", JsString(message)) :: Nil => DockerBuildStatus(message)
-              case ("stream", JsString(message)) :: Nil => DockerBuildStream(message)
-              case ("error", JsString(message)) :: ("errorDetail", _) :: Nil => DockerBuildError(message)
-              case _ => DockerBuildError(s"Invalid output $s")
+    val toBuildOutputStream = Flow[ByteString]
+      .mapConcat { s =>
+        try {
+          val json = JsonParser(ParserInput(s.utf8String)).asJsObject
+          if (json.fields.contains("stream")) {
+            json.getFields("stream") match {
+              case Seq(JsString(message)) => DockerBuildStream(message) :: Nil
+              case _ => Nil
             }
-          } catch {
-            case ex: JsonParser.ParsingException => DockerBuildError(s"Invalid output $s")
+          } else if (json.fields.contains("status") && json.fields.contains("progressDetail") && json.fields.contains("progress")) {
+            json.getFields("status", "progressDetail", "progress") match {
+              case Seq(JsString(message), JsObject(_), JsString(_)) => DockerBuildStatusProgress(message) :: Nil
+              case _ => Nil
+            }
+          } else if (json.fields.contains("status")) {
+            json.getFields("status") match {
+              case Seq(JsString(message)) => DockerBuildStatus(message) :: Nil
+              case _ => Nil
+            }
+          } else if (json.fields.contains("error")) {
+            json.getFields("error") match {
+              case Seq(JsString(message)) => DockerBuildError(message) :: Nil
+              case _ => Nil
+            }
+          } else {
+            log.warn(s"Unrecognized build output $s")
+            Nil
           }
+        } catch {
+          case ex: JsonParser.ParsingException => DockerBuildError(s"Invalid output $s") :: Nil
         }
-        DockerBuild(nameOrRandom, stream)
+      }
+
+    rawRequest(POST, uri, entity = entity).map { res =>
+      val stream = res.entity.dataBytes.via(toBuildOutputStream)
+      DockerBuild(nameOrRandom, stream)
     }
   }
 
@@ -95,22 +117,22 @@ class Docker(host: String, port: Int)
     jsonRequest(DELETE, Uri(s"/images/$name?force=$force&noprune=$noPrune")).map(_ => ())
   }
 
-  def runImage[T](repository: String, command: List[String]): Future[DockerRun] = {
+  def runImage[T](name: String, command: List[String]): Future[DockerRun] = {
     for {
-      id <- createContainer(repository, command)
+      id <- createContainer(name, command)
       s <- attachToContainer(id)
       _ <- startContainer(id)
     } yield DockerRun(id, s)
   }
 
-  def createContainer(repository: String, command: List[String]): Future[String] = {
+  def createContainer(name: String, command: List[String]): Future[String] = {
     val payload = JsObject(
-      "Image" -> JsString(repository),
+      "Image" -> JsString(name),
       "Tty" -> JsBoolean(true),
       "Cmd" -> JsArray(command.map(JsString.apply).toVector)
     )
 
-    log.debug(s"Creating container from $repository")
+    log.debug(s"Creating container from $name")
     jsonRequest(POST, Uri("/containers/create"), Some(payload))
       .map(_.get.asJsObject)
       .map { json =>

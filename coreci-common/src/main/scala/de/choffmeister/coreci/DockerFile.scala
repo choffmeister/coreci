@@ -10,11 +10,8 @@ import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveOut
 case class DockerfileInstruction(name: String, arguments: String)
 
 case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
-  def from(repository: String, tag: Option[String]): Dockerfile =
-    tag match {
-      case Some(t) => copy(instructions = instructions :+ DockerfileInstruction("FROM", s"$repository:$t"))
-      case None => copy(instructions = instructions :+ DockerfileInstruction("FROM", repository))
-    }
+  def from(name: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("FROM", name))
 
   def comment(text: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("#", text))
@@ -44,7 +41,7 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
 object Dockerfile {
   def empty: Dockerfile = Dockerfile(Seq.empty)
 
-  def from(repository: String, tag: Option[String]): Dockerfile = Dockerfile.empty.from(repository, tag)
+  def from(name: String): Dockerfile = Dockerfile.empty.from(name)
 
   def parse(raw: String): Dockerfile = {
     def dropFirst(s: String): String = s.substring(1)

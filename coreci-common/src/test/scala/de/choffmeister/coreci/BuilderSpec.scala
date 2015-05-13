@@ -17,8 +17,8 @@ class BuilderSpec extends Specification with NoTimeConversions {
           title = "Project",
           description = "This is a project",
           image = "busybox:latest",
-          command = "uname" :: "-a" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
+          script = "#!/bin/sh -e\n\nuname -a\n")))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
         val finished = await(builder.run(pending))
         val outputs = await(db.outputs.all)
 
@@ -37,8 +37,8 @@ class BuilderSpec extends Specification with NoTimeConversions {
           title = "Project",
           description = "This is a project",
           image = "busybox:latest",
-          command = "false" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
+          script = "#!/bin/sh -e\n\nexit 1")))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
         val finished = await(builder.run(pending))
 
         finished.status must beAnInstanceOf[Failed]
@@ -56,8 +56,8 @@ class BuilderSpec extends Specification with NoTimeConversions {
           title = "Project",
           description = "This is a project",
           image = "unknownimage",
-          command = "uname" :: "-a" :: Nil)))
-        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, command = project.command)))
+          script = "#!/bin/sh -e\n\nuname -a\n")))
+        val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
         val finished = await(builder.run(pending))
 
         finished.status must beAnInstanceOf[Failed]
