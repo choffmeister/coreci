@@ -21,7 +21,7 @@ class Builder(db: Database, docker: Docker)
     val dockerfile = Dockerfile.from(pending.image)
       .add(".", "/coreci")
       .run("chmod +x /coreci/build")
-    val context = Dockerfile.toTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
+    val context = Dockerfile.createTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
 
     def prepareOutputFlow(startIndex: Long) = Flow[DockerBuildOutput]
       .map {

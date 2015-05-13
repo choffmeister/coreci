@@ -31,7 +31,9 @@ case class DockerContainerInspection(
   id: String,
   stateExitCode: Int)
 
-sealed trait DockerBuildOutput
+sealed trait DockerBuildOutput {
+  val message: String
+}
 case class DockerBuildStream(message: String) extends DockerBuildOutput
 case class DockerBuildStatus(message: String) extends DockerBuildOutput
 case class DockerBuildStatusProgress(message: String) extends DockerBuildOutput

@@ -72,7 +72,7 @@ object Dockerfile {
     Dockerfile(instructions)
   }
 
-  def toTarBall(dockerfile: Dockerfile, context: Map[String, ByteString] = Map.empty): Source[ByteString, Unit] = {
+  def createTarBall(dockerfile: Dockerfile, context: Map[String, ByteString] = Map.empty): Source[ByteString, Unit] = {
     val mem = new ByteArrayOutputStream()
     val tar = new TarArchiveOutputStream(new GZIPOutputStream(mem))
 
