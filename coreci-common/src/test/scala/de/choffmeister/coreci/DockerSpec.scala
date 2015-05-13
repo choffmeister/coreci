@@ -1,6 +1,5 @@
 package de.choffmeister.coreci
 
-import akka.stream.scaladsl._
 import akka.util.ByteString
 import org.specs2.mutable._
 import org.specs2.time.NoTimeConversions
@@ -64,7 +63,7 @@ class DockerSpec extends Specification with NoTimeConversions {
           .run("unknown command")
 
         val future = for {
-          build <- docker.buildImage(Dockerfile.createTarBall(dockerfile), forceRemove = true, noCache = true).andThen { case x => println(x) }
+          build <- docker.buildImage(Dockerfile.createTarBall(dockerfile), forceRemove = true, noCache = true)
           result <- build.stream.runFold(("", 0)) {
             case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
             case (acc, o: DockerBuildOutput) => (acc._1 + o.message, acc._2)
