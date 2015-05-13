@@ -1,6 +1,7 @@
 package de.choffmeister.coreci
 
 import akka.stream.scaladsl._
+import akka.util.ByteString
 import org.specs2.mutable._
 import org.specs2.time.NoTimeConversions
 
@@ -44,7 +45,7 @@ class DockerSpec extends Specification with NoTimeConversions {
           .run("echo hello world")
 
         val future = for {
-          build <- docker.buildImage(dockerfile.asTar, forceRemove = true, noCache = true)
+          build <- docker.buildImage(Dockerfile.toTarBall(dockerfile), forceRemove = true, noCache = true)
           result <- build.stream.runFold(("", 0)) {
             case (acc, DockerBuildStream(msg)) => (acc._1 + msg, acc._2)
             case (acc, DockerBuildStatus(msg)) => (acc._1 + msg, acc._2)
@@ -64,7 +65,7 @@ class DockerSpec extends Specification with NoTimeConversions {
           .run("unknown command")
 
         val future = for {
-          build <- docker.buildImage(dockerfile.asTar, forceRemove = true, noCache = true).andThen { case x => println(x) }
+          build <- docker.buildImage(Dockerfile.toTarBall(dockerfile), forceRemove = true, noCache = true).andThen { case x => println(x) }
           result <- build.stream.runFold(("", 0)) {
             case (acc, DockerBuildStream(msg)) => (acc._1 + msg, acc._2)
             case (acc, DockerBuildStatus(msg)) => (acc._1 + msg, acc._2)
@@ -74,6 +75,30 @@ class DockerSpec extends Specification with NoTimeConversions {
 
         await(future)._1 must contain("GNU/Linux")
         await(future)._2 === 1
+      }
+    }
+
+    "build images with context" in new TestActorSystem {
+      within(5.seconds) {
+        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val dockerfile = Dockerfile.from("busybox", Some("latest"))
+          .add(".", "/context")
+          .run("sh /context/test.sh")
+        val context = Map("test.sh" -> ByteString("#!/bin/sh -e\n\necho hello\necho world\necho !!!"))
+
+        val future = for {
+          build <- docker.buildImage(Dockerfile.toTarBall(dockerfile, context), forceRemove = true, noCache = true)
+          result <- build.stream.runFold(("", 0)) {
+            case (acc, DockerBuildStream(msg)) => (acc._1 + msg, acc._2)
+            case (acc, DockerBuildStatus(msg)) => (acc._1 + msg, acc._2)
+            case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
+          }.andThen { case _ => docker.deleteImage(build.imageName, force = true) }
+        } yield result
+
+        await(future)._1 must contain("hello")
+        await(future)._1 must contain("world")
+        await(future)._1 must contain("!!!")
+        await(future)._2 === 0
       }
     }
 

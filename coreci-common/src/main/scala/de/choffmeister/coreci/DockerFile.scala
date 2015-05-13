@@ -34,23 +34,11 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
   def cmd(commandParts: List[String]): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("CMD", "[" + commandParts.map("\"" + _ + "\"").mkString(",") + "]"))
 
+  def add(source: String, target: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("ADD", source + " " + target))
+
   def asString: String =
     instructions.map(inst => inst.name.toUpperCase + " " + inst.arguments).mkString("\n\n") + "\n"
-
-  def asTar: Source[ByteString, Unit] = {
-    val mem = new ByteArrayOutputStream()
-    val tar = new TarArchiveOutputStream(new GZIPOutputStream(mem))
-    val content = asString.getBytes("UTF-8")
-
-    val entry = new TarArchiveEntry("Dockerfile")
-    entry.setSize(content.length)
-    tar.putArchiveEntry(entry)
-    tar.write(content)
-    tar.closeArchiveEntry()
-    tar.close()
-
-    Source(ByteString(mem.toByteArray) :: Nil)
-  }
 }
 
 object Dockerfile {
@@ -85,5 +73,31 @@ object Dockerfile {
         DockerfileInstruction(inst, args.map(_.trim).getOrElse(""))
     }
     Dockerfile(instructions)
+  }
+
+  def toTarBall(dockerfile: Dockerfile, context: Map[String, ByteString] = Map.empty): Source[ByteString, Unit] = {
+    val mem = new ByteArrayOutputStream()
+    val tar = new TarArchiveOutputStream(new GZIPOutputStream(mem))
+
+    val dockerfileEntry = new TarArchiveEntry("Dockerfile")
+    val dockerfileContent = dockerfile.asString.getBytes("UTF-8")
+    dockerfileEntry.setSize(dockerfileContent.length)
+    tar.putArchiveEntry(dockerfileEntry)
+    tar.write(dockerfileContent)
+    tar.closeArchiveEntry()
+
+    for (file <- context) {
+      val fileEntry = new TarArchiveEntry(file._1)
+      val fileContent = new Array[Byte](file._2.length)
+      file._2.copyToArray(fileContent)
+      fileEntry.setSize(fileContent.length)
+      tar.putArchiveEntry(fileEntry)
+      tar.write(fileContent)
+      tar.closeArchiveEntry()
+    }
+
+    tar.close()
+
+    Source(ByteString(mem.toByteArray) :: Nil)
   }
 }
