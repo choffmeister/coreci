@@ -13,11 +13,15 @@ case class Project(
   canonicalName: String,
   title: String,
   description: String,
-  dockerRepository: String,
-  command: List[String],
+  image: String,
+  script: String,
+  environment: List[EnvironmentVariable] = Nil,
   nextBuildNumber: Int = 1,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0)) extends BaseModel
+{
+  def defused: Project = this.copy(environment = this.environment.map(_.defused))
+}
 
 class ProjectTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Project](database, collection) {
   implicit val reader = ProjectBSONFormat.Reader
@@ -35,7 +39,10 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
   }
 
   override def configure(): Future[Unit] = {
-    collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending))).map(_ => ())
+    Future.sequence(Seq(
+      collection.indexesManager.ensure(Index(List("userId" -> IndexType.Ascending))),
+      collection.indexesManager.ensure(Index(List("canonicalName" -> IndexType.Ascending), unique = true))
+    )).map(_ => ())
   }
 
   def list(page: (Option[Int], Option[Int])): Future[List[Project]] =
@@ -58,6 +65,9 @@ class ProjectTable(database: Database, collection: BSONCollection)(implicit exec
 }
 
 object ProjectBSONFormat {
+  implicit val environmentVariableReader = EnvironmentVariableBSONFormat.Reader
+  implicit val environmentVariableWriter = EnvironmentVariableBSONFormat.Writer
+
   implicit object Reader extends BSONDocumentReader[Project] {
     def read(doc: BSONDocument): Project = Project(
       id = doc.getAs[BSONObjectID]("_id").get,
@@ -65,8 +75,9 @@ object ProjectBSONFormat {
       canonicalName = doc.getAs[String]("canonicalName").get,
       title = doc.getAs[String]("title").get,
       description = doc.getAs[String]("description").get,
-      dockerRepository = doc.getAs[String]("dockerRepository").get,
-      command = doc.getAs[List[String]]("command").get,
+      image = doc.getAs[String]("image").get,
+      script = doc.getAs[String]("script").get,
+      environment = doc.getAs[List[EnvironmentVariable]]("environment").get,
       nextBuildNumber = doc.getAs[Int]("nextBuildNumber").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get
@@ -80,8 +91,9 @@ object ProjectBSONFormat {
       "canonicalName" -> obj.canonicalName,
       "title" -> obj.title,
       "description" -> obj.description,
-      "dockerRepository" -> obj.dockerRepository,
-      "command" -> obj.command,
+      "image" -> obj.image,
+      "script" -> obj.script,
+      "environment" -> obj.environment,
       "nextBuildNumber" -> obj.nextBuildNumber,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt

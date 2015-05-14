@@ -1,6 +1,6 @@
 package de.choffmeister.coreci.http
 
-import akka.actor.ActorSystem
+import akka.actor._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
@@ -9,15 +9,22 @@ import spray.json._
 
 import scala.concurrent.ExecutionContext
 
-class ProjectRoutes(val database: Database)
+class ProjectRoutes(val database: Database, workerHandler: ActorRef)
     (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
-  lazy val builder = new Builder(database)
-
   lazy val routes =
     pathEnd {
       get {
         pageable { page =>
-          complete(database.projects.list(page = page))
+          complete(database.projects.list(page = page).map(_.map(_.defused)))
+        }
+      } ~
+      post {
+        authenticate() { user =>
+          entity(as[Project]) { project =>
+            complete {
+              database.projects.insert(project.copy(userId = user.id)).map(_.defused)
+            }
+          }
         }
       }
     } ~
@@ -26,16 +33,17 @@ class ProjectRoutes(val database: Database)
         case Some(project) =>
           pathEnd {
             get {
-              complete(project)
+              complete(project.defused)
             }
           } ~
           path("run") {
             post {
-              authenticate.bearerToken(acceptExpired = false) { user =>
+              authenticate() { user =>
                 complete {
-                  val pending = database.builds.insert(Build(projectId = project.id))
-                  pending.flatMap(p => builder.run(p, project.dockerRepository, project.command))
-                  pending
+                  database.builds.insert(Build(projectId = project.id, image = project.image, script = project.script, environment = project.environment)).map { build =>
+                    workerHandler ! WorkerHandlerProtocol.DispatchBuild
+                    build.defused
+                  }
                 }
               }
             }
@@ -44,7 +52,7 @@ class ProjectRoutes(val database: Database)
             pathEnd {
               get {
                 pageable { page =>
-                  complete(database.builds.listByProject(project.id, page))
+                  complete(database.builds.listByProject(project.id, page).map(_.map(_.defused)))
                 }
               }
             } ~
@@ -53,7 +61,7 @@ class ProjectRoutes(val database: Database)
                 case Some(build) =>
                   pathEnd {
                     get {
-                      complete(build)
+                      complete(build.defused)
                     }
                   } ~
                   path("output") {

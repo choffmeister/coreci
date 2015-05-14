@@ -18,9 +18,11 @@ class Server(config: Config, serverConfig: ServerConfig, database: Database) ext
   implicit val materializer = ActorFlowMaterializer()
 
   def startup(): Unit = {
+    val workerHandler = system.actorOf(Props(new WorkerHandler(database, config.dockerWorkers)), "worker-handler")
+
     val binding = Http(system).bind(interface = serverConfig.httpInterface, port = serverConfig.httpPort)
     val plugins = Plugins.init(config)
-    val apiRoutes = new ApiRoutes(database, plugins)
+    val apiRoutes = new ApiRoutes(database, workerHandler, plugins)
     val staticContentRoutes = new StaticContentRoutes(serverConfig.webDir)
     val routes =
       pathPrefix("api")(apiRoutes.routes) ~

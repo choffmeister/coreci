@@ -21,9 +21,13 @@ var Navigation = React.createClass({
     return (
       <Navbar brand={this.props.brand} toggleNavKey={0}>
         <CollapsableNav eventKey={0}>
-          <Nav navbar right>
+          <Nav navbar left>
             <NavItemLink to="builds-list" eventKey={1}>Builds</NavItemLink>
             <NavItemLink to="projects-list" eventKey={2}>Projects</NavItemLink>
+            <NavItemLink to="workers-list" eventKey={2}>Workers</NavItemLink>
+          </Nav>
+          <Nav navbar right>
+            <NavItemLink to="projects-create" eventKey={1}>Create</NavItemLink>
             <ModalTrigger modal={<LoginDialog />}>
               <NavItem onClick={this.noop} eventKey={3}>Login</NavItem>
             </ModalTrigger>

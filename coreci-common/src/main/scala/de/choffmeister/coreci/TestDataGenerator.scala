@@ -13,10 +13,10 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     val um = new UserManager(conf.passwordHashAlgorithm, conf.passwordHashAlgorithmConfig, db)
 
     for {
-      users <- seq((1 to 3).map(i => um.createUser(user(i), s"pass$i")))
-      projects <- seq((1 to 3).map(i => db.projects.insert(project(users.head, i))))
-      builds <- seq((1 to 3).map(i => db.builds.insert(build(projects.head, i))))
-      outputs <- seq(builds.flatMap(b => (1 to 3).map(i => db.outputs.insert(output(b, i)))))
+      users <- seq((1 to 2).map(i => um.createUser(user(i), s"pass$i")))
+      projects <- seq((1 to 2).map(i => db.projects.insert(project(users.head, i))))
+      builds <- seq((1 to 2).map(i => db.builds.insert(build(projects.head, i))))
+      outputs <- seq(builds.flatMap(b => (1 to 2).map(i => db.outputs.insert(output(b, i)))))
     } yield ()
   }
 
@@ -29,15 +29,19 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     canonicalName = s"project$i",
     title = s"Project $i",
     description = s"This is Project #$i",
-    dockerRepository = "node:0.10",
-    command = i match {
-      case 1 => "npm" :: "install" :: "-g" :: "gulp" :: "--verbose" :: "--no-spin" :: Nil
-      case _ => "uname" :: "-a" :: Nil
-    })
+    image = "node:0.10",
+    script = i match {
+      case 1 => "#!/bin/bash\n\necho $PUBLIC\necho $PRIVATE\n\nnpm install -g gulp --no-spin\n"
+      case _ => "#!/bin/bash\n\nuname -a\n"
+    },
+    environment = EnvironmentVariable("PUBLIC", "public", secret = false) :: EnvironmentVariable("PRIVATE", "private", secret = true) :: Nil)
 
   private def build(project: Project, i: Int) = Build(
     projectId = project.id,
-    status = Succeeded(now, now))
+    status = Succeeded(now, now),
+    image = project.image,
+    script = project.script,
+    environment = project.environment)
 
   private def output(build: Build, i: Int) = Output(
     buildId = build.id,

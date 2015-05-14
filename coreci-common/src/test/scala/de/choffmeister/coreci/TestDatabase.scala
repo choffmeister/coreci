@@ -12,12 +12,16 @@ import scala.concurrent.duration._
 object TestDatabase {
   lazy val config = Config.load()
 
-  def apply[R: AsResult](a: Database ⇒ R) = {
+  def apply[R: AsResult](prefill: Boolean)(a: Database ⇒ R) = {
     val suffix = UUID.randomUUID().toString
-    val db = Database.open(config.mongoDbServers, config.mongoDbDatabaseName, suffix)
+    val db = Database.open(config.mongoDbServer, config.mongoDbDatabaseName, suffix)
 
     try {
       await(db.configure())
+      if (prefill) {
+        val generator = new TestDataGenerator(config, db)
+        await(generator.run())
+      }
       AsResult.effectively(a(db))
     } finally {
       await(db.clear())

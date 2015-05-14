@@ -3,26 +3,32 @@ package de.choffmeister.coreci.http
 import akka.actor._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci.Plugin
 import de.choffmeister.coreci.models._
+import reactivemongo.core.commands.LastError
 
 import scala.concurrent.ExecutionContext
 
-class ApiRoutes(val database: Database, val plugins: Map[String, Plugin])
+class ApiRoutes(val database: Database, workerHandler: ActorRef, val plugins: Map[String, Plugin])
     (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
   lazy val authRoutes = new AuthRoutes(database)
-  lazy val projectRoutes = new ProjectRoutes(database)
-  lazy val buildRoutes = new BuildRoutes(database)
+  lazy val projectRoutes = new ProjectRoutes(database, workerHandler)
+  lazy val buildRoutes = new BuildRoutes(database, workerHandler)
+  lazy val workerRoutes = new WorkerRoutes(database, workerHandler)
   lazy val pluginRoutes = new PluginRoutes(database, plugins)
 
-  lazy val routes = filterHttpChallengesByExtensionHeader {
-    pathPrefix("auth")(authRoutes.routes) ~
-    pathPrefix("projects")(projectRoutes.routes) ~
-    pathPrefix("builds")(buildRoutes.routes) ~
-    pathPrefix("plugins")(pluginRoutes.routes)
+  lazy val routes = handleDatabaseExceptions {
+    filterHttpChallengesByExtensionHeader {
+      pathPrefix("auth")(authRoutes.routes) ~
+      pathPrefix("projects")(projectRoutes.routes) ~
+      pathPrefix("builds")(buildRoutes.routes) ~
+      pathPrefix("workers")(workerRoutes.routes) ~
+      pathPrefix("plugins")(pluginRoutes.routes)
+    }
   }
 
   def filterHttpChallengesByExtensionHeader: Directive0 =
@@ -41,5 +47,14 @@ class ApiRoutes(val database: Database, val plugins: Map[String, Plugin])
       case AuthenticationFailedRejection(c, ch) => cond(ch)
       case rejection => true
     }
+  }
+
+  def handleDatabaseExceptions: Directive0 = {
+    val exceptionHandler = ExceptionHandler({
+      case err @ LastError(_, _, Some(11000 | 11001), _, _, _, _) =>
+        complete(UnprocessableEntity, err.getMessage)
+    })
+
+    handleExceptions(exceptionHandler)
   }
 }

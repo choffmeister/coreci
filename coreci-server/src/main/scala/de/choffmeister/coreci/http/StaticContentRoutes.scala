@@ -14,12 +14,12 @@ class StaticContentRoutes(webDir: Option[File])(implicit system: ActorSystem, ex
     webDir.map(_.toString) match {
       case Some(webDir) =>
         val index = getFromFile(webDir + "/index.html")
-        val cache = getFromFile(webDir + "/cache.manifest")
+        val favicon = getFromFile(webDir + "/favicon.ico")
         val app = getFromDirectory(webDir)
         val routes =
           pathSingleSlash(index) ~
           path("index.html")(index) ~
-          path("cache.manifest")(cache) ~
+          path("favicon.ico")(favicon) ~
           pathPrefixTest("app" ~ Slash)(app) ~
           pathPrefixTest(!("app" ~ Slash))(index)
         routes

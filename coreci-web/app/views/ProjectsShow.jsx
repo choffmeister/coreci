@@ -1,9 +1,10 @@
 var React = require('react'),
     Link = require('react-router').Link,
-    RestClient = require('../services/RestClient'),
-    DateTime = require('../components/DateTime.jsx');
+    DateTime = require('../components/DateTime.jsx'),
+    JsonClient = require('../services/HttpClient').Json();
 
-var Project = React.createClass({
+
+var ProjectsShow = React.createClass({
   contextTypes: {
     router: React.PropTypes.func
   },
@@ -11,20 +12,20 @@ var Project = React.createClass({
   statics: {
     fetchData: function (params) {
       return {
-        project: RestClient.get('/api/projects/' + params.projectCanonicalName),
-        builds: RestClient.get('/api/projects/' + params.projectCanonicalName + '/builds')
+        project: JsonClient.get('/api/projects/' + params.projectCanonicalName),
+        builds: JsonClient.get('/api/projects/' + params.projectCanonicalName + '/builds')
       };
     }
   },
 
   run: function () {
-    RestClient.post('/api/projects/' + this.props.data['projects-show'].project.canonicalName + '/run').then(build => {
+    JsonClient.post('/api/projects/' + this.props.data.project.canonicalName + '/run').then(build => {
       this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
     });
   },
 
   render: function () {
-    var builds = this.props.data['projects-show'].builds.map(build => {
+    var builds = this.props.data.builds.map(build => {
       var duration = build.status.finishedAt && build.status.startedAt ?
         build.status.finishedAt - build.status.startedAt : undefined;
 
@@ -59,10 +60,10 @@ var Project = React.createClass({
       </table>
     );
 
-    var project = this.props.data['projects-show'].project;
+    var project = this.props.data.project;
     return (
       <div>
-        <h1>Job {project.title}</h1>
+        <h1>Project {project.title}</h1>
         <p><button onClick={this.run} className="btn btn-primary">RUN</button></p>
         <dl>
           <dt>Description</dt>
@@ -71,10 +72,12 @@ var Project = React.createClass({
           <dd><DateTime value={project.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>
           <dd><DateTime value={project.updatedAt} kind="relative"/></dd>
-          <dt>Docker image</dt>
-          <dd>{project.dockerRepository}</dd>
-          <dt>Command</dt>
-          <dd><pre>{JSON.stringify(project.command)}</pre></dd>
+          <dt>Image</dt>
+          <dd>{project.image}</dd>
+          <dt>Script</dt>
+          <dd><pre>{project.script}</pre></dd>
+          <dt>Environment</dt>
+          <dd><pre>{project.environment.map(e => e.name + '=' + e.value).join('\n')}</pre></dd>
         </dl>
         {buildList}
       </div>
@@ -82,4 +85,4 @@ var Project = React.createClass({
   }
 });
 
-module.exports = Project;
+module.exports = ProjectsShow;

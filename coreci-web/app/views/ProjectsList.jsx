@@ -1,19 +1,19 @@
 var React = require('react'),
     Link = require('react-router').Link,
-    RestClient = require('../services/RestClient'),
-    DateTime = require('../components/DateTime.jsx');
+    DateTime = require('../components/DateTime.jsx'),
+    JsonClient = require('../services/HttpClient').Json();
 
-var Projects = React.createClass({
+var ProjectsList = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        projects: RestClient.get('/api/projects')
+        projects: JsonClient.get('/api/projects')
       };
     }
   },
 
   render: function () {
-    var projects = this.props.data['projects-list'].projects.map(project => (
+    var projects = this.props.data.projects.map(project => (
       <tr key={project.id}>
         <td><Link to="projects-show" params={{projectCanonicalName: project.canonicalName}}>{project.canonicalName}</Link></td>
       </tr>
@@ -33,4 +33,4 @@ var Projects = React.createClass({
   }
 });
 
-module.exports = Projects;
+module.exports = ProjectsList;

@@ -10,11 +10,8 @@ import org.apache.commons.compress.archivers.tar.{TarArchiveEntry, TarArchiveOut
 case class DockerfileInstruction(name: String, arguments: String)
 
 case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
-  def from(repository: String, tag: Option[String]): Dockerfile =
-    tag match {
-      case Some(t) => copy(instructions = instructions :+ DockerfileInstruction("FROM", s"$repository:$t"))
-      case None => copy(instructions = instructions :+ DockerfileInstruction("FROM", repository))
-    }
+  def from(name: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("FROM", name))
 
   def comment(text: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("#", text))
@@ -25,6 +22,9 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
   def run(command: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("RUN", command))
 
+  def env(key: String, value: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("ENV", key + "=\"" + value.replace("\"", "\\\"") + "\""))
+
   def expose(port: Int): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("EXPOSE", port.toString))
 
@@ -34,29 +34,17 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
   def cmd(commandParts: List[String]): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("CMD", "[" + commandParts.map("\"" + _ + "\"").mkString(",") + "]"))
 
+  def add(source: String, target: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("ADD", source + " " + target))
+
   def asString: String =
     instructions.map(inst => inst.name.toUpperCase + " " + inst.arguments).mkString("\n\n") + "\n"
-
-  def asTar: Source[ByteString, Unit] = {
-    val mem = new ByteArrayOutputStream()
-    val tar = new TarArchiveOutputStream(new GZIPOutputStream(mem))
-    val content = asString.getBytes("UTF-8")
-
-    val entry = new TarArchiveEntry("Dockerfile")
-    entry.setSize(content.length)
-    tar.putArchiveEntry(entry)
-    tar.write(content)
-    tar.closeArchiveEntry()
-    tar.close()
-
-    Source(ByteString(mem.toByteArray) :: Nil)
-  }
 }
 
 object Dockerfile {
   def empty: Dockerfile = Dockerfile(Seq.empty)
 
-  def from(repository: String, tag: Option[String]): Dockerfile = Dockerfile.empty.from(repository, tag)
+  def from(name: String): Dockerfile = Dockerfile.empty.from(name)
 
   def parse(raw: String): Dockerfile = {
     def dropFirst(s: String): String = s.substring(1)
@@ -85,5 +73,31 @@ object Dockerfile {
         DockerfileInstruction(inst, args.map(_.trim).getOrElse(""))
     }
     Dockerfile(instructions)
+  }
+
+  def createTarBall(dockerfile: Dockerfile, context: Map[String, ByteString] = Map.empty): Source[ByteString, Unit] = {
+    val mem = new ByteArrayOutputStream()
+    val tar = new TarArchiveOutputStream(new GZIPOutputStream(mem))
+
+    val dockerfileEntry = new TarArchiveEntry("Dockerfile")
+    val dockerfileContent = dockerfile.asString.getBytes("UTF-8")
+    dockerfileEntry.setSize(dockerfileContent.length)
+    tar.putArchiveEntry(dockerfileEntry)
+    tar.write(dockerfileContent)
+    tar.closeArchiveEntry()
+
+    for (file <- context) {
+      val fileEntry = new TarArchiveEntry(file._1)
+      val fileContent = new Array[Byte](file._2.length)
+      file._2.copyToArray(fileContent)
+      fileEntry.setSize(fileContent.length)
+      tar.putArchiveEntry(fileEntry)
+      tar.write(fileContent)
+      tar.closeArchiveEntry()
+    }
+
+    tar.close()
+
+    Source(ByteString(mem.toByteArray) :: Nil)
   }
 }

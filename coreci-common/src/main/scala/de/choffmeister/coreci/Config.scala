@@ -1,15 +1,14 @@
 package de.choffmeister.coreci
 
-import akka.http.scaladsl.model.Uri
 import com.typesafe.config.{Config => TypesafeConfig, ConfigFactory => TypesafeConfigFactory}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.FiniteDuration
 
 case class Config(
-  mongoDbServers: List[(String, Int)],
+  mongoDbServer: String,
   mongoDbDatabaseName: String,
-  dockerWorkers: List[(String, Int)],
+  dockerWorkers: Map[String, String],
   passwordHashAlgorithm: String,
   passwordHashAlgorithmConfig: List[String],
   builderOutputGroupMaxCount: Int,
@@ -24,9 +23,9 @@ object Config extends Logger {
     val rawCoreci = raw.getConfig("coreci")
 
     Config(
-      mongoDbServers = (rawCoreci.getString("mongodb.host") :: Nil).map(parseMongoDbHost),
+      mongoDbServer = rawCoreci.getString("mongodb.host"),
       mongoDbDatabaseName = rawCoreci.getString("mongodb.database"),
-      dockerWorkers = (rawCoreci.getString("docker.host") :: Nil).map(parseDockerHost),
+      dockerWorkers = rawCoreci.getStringMap("docker.workers"),
       passwordHashAlgorithm = rawCoreci.getString("passwords.hash-algorithm").split(":", -1).toList.head,
       passwordHashAlgorithmConfig = rawCoreci.getString("passwords.hash-algorithm").split(":", -1).toList.tail,
       builderOutputGroupMaxCount = rawCoreci.getInt("builder.output-group.max-count"),
@@ -34,19 +33,5 @@ object Config extends Logger {
       pluginClassNames = rawCoreci.getStringList("plugins").asScala.toList,
       raw = raw
     )
-  }
-
-  private def parseMongoDbHost(str: String): (String, Int) = Uri(str) match {
-    case Uri("mongodb", authority, Uri.Path.Empty | Uri.Path.SingleSlash, Uri.Query.Empty, None) =>
-      (authority.host.address(), if (authority.port > 0) authority.port else 27017)
-    case _ =>
-      throw new Exception(s"Unsupported URI '$str' for MongoDB host")
-  }
-
-  private def parseDockerHost(str: String): (String, Int) = Uri(str) match {
-    case Uri("tcp", authority, Uri.Path.Empty | Uri.Path.SingleSlash, Uri.Query.Empty, None) =>
-      (authority.host.address(), if (authority.port > 0) authority.port else 2375)
-    case _ =>
-      throw new Exception(s"Unsupported URI '$str' for MongoDB host")
   }
 }

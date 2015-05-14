@@ -3,6 +3,7 @@ package de.choffmeister.coreci.models
 import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
+import reactivemongo.core.commands.{FindAndModify, Update}
 
 import scala.concurrent._
 
@@ -17,9 +18,15 @@ case class Build(
   projectId: BSONObjectID,
   number: Int = 0,
   status: BuildStatus = Pending,
+  image: String,
+  script: String,
+  environment: List[EnvironmentVariable] = Nil,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0),
   projectCanonicalName: String = "") extends BaseModel
+{
+  def defused: Build = this.copy(environment = this.environment.map(_.defused))
+}
 
 class BuildTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Build](database, collection) {
   implicit val reader = BuildJSONFormat.Reader
@@ -56,6 +63,15 @@ class BuildTable(database: Database, collection: BSONCollection)(implicit execut
     query(BSONDocument("projectId" -> projectId), sort = BSONDocument("createdAt" -> -1), page = page)
   def findByNumber(projectId: BSONObjectID, number: Int): Future[Option[Build]] =
     queryOne(BSONDocument("projectId" -> projectId, "number" -> number))
+
+  def getPending(): Future[Option[Build]] = {
+    val now = BSONDateTime(System.currentTimeMillis)
+    val selector = BSONDocument("status" -> BuildJSONFormat.StatusWriter.write(Pending))
+    val modifier = Update(BSONDocument("$set" -> BSONDocument("status" -> BuildJSONFormat.StatusWriter.write(Running(now)))), fetchNewObject = true)
+
+    database.mongoDbDatabase.command(new FindAndModify(collection.name, selector, modifier))
+      .map(_.map(BuildJSONFormat.Reader.read))
+  }
 }
 
 object BuildJSONFormat {
@@ -103,12 +119,18 @@ object BuildJSONFormat {
     }
   }
 
+  implicit val environmentVariableReader = EnvironmentVariableBSONFormat.Reader
+  implicit val environmentVariableWriter = EnvironmentVariableBSONFormat.Writer
+
   implicit object Reader extends BSONDocumentReader[Build] {
     def read(doc: BSONDocument): Build = Build(
       id = doc.getAs[BSONObjectID]("_id").get,
       projectId = doc.getAs[BSONObjectID]("projectId").get,
       number = doc.getAs[Int]("number").get,
       status = doc.getAs[BuildStatus]("status").get,
+      image = doc.getAs[String]("image").get,
+      script = doc.getAs[String]("script").get,
+      environment = doc.getAs[List[EnvironmentVariable]]("environment").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
       projectCanonicalName = doc.getAs[String]("projectCanonicalName").get
@@ -121,6 +143,9 @@ object BuildJSONFormat {
       "projectId" -> obj.projectId,
       "number" -> obj.number,
       "status" -> obj.status,
+      "image" -> obj.image,
+      "script" -> obj.script,
+      "environment" -> obj.environment,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt,
       "projectCanonicalName" -> obj.projectCanonicalName

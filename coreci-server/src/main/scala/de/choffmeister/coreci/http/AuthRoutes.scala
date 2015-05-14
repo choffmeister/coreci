@@ -18,7 +18,7 @@ class AuthRoutes(val database: Database)
     pathPrefix("token") {
       path("create") {
         get {
-          authenticate.basic { user =>
+          authenticate.basic() { user =>
             completeWithToken(user)
           }
         }
@@ -33,7 +33,7 @@ class AuthRoutes(val database: Database)
     } ~
     path("state") {
       get {
-        authenticate.bearerToken(acceptExpired = false) { user =>
+        authenticate() { user =>
           complete(user)
         }
       }

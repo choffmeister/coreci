@@ -16,12 +16,12 @@ class DatabaseSpec extends Specification with NoTimeConversions{
     }
 
     entity("projects", _.projects, noPreparation) {
-      case Left((_, i)) => Project(userId = BSONObjectID.generate, canonicalName = s"project$i", title = s"Project $i", description = s"This is projects $i", dockerRepository = "", command = Nil)
+      case Left((_, i)) => Project(userId = BSONObjectID.generate, canonicalName = s"project$i", title = s"Project $i", description = s"This is projects $i", image = "", script = "")
       case Right(j) => j.copy(description = j.description + "-modified")
     }
 
     entity("builds", _.builds, withProject) {
-      case Left((project, i)) => Build(projectId = project.id, status = Pending)
+      case Left((project, i)) => Build(projectId = project.id, status = Pending, image = "busybox:latest", script = "#!/bin/sh -e\n\nuname -a\n")
       case Right(b) => b.copy(status = Running(BSONDateTime(0)))
     }
 
@@ -34,13 +34,13 @@ class DatabaseSpec extends Specification with NoTimeConversions{
   private def noPreparation(db: Database): Unit = ()
 
   private def withProject(db: Database): Project =
-    await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", dockerRepository = "", command = Nil)))
+    await(db.projects.insert(Project(userId = BSONObjectID.generate, canonicalName = "project", title = "Project", description = "This is a project", image = "", script = "")))
 
   private def await[T](f: => Future[T]): T =
     Await.result(f, 10.seconds)
 
   private def entity[T <: BaseModel, T2](name: String, table: Database => Table[T], prepare: Database => T2)(generator: Either[(T2, Int), T] => T) = {
-    ("work with " + name) in TestDatabase { db =>
+    ("work with " + name) in TestDatabase(prefill = false) { db =>
       val tab = table(db)
       val prepared = prepare(db)
 
