@@ -1,6 +1,8 @@
 var React = require('react'),
     Link = require('react-router').Link,
     Bluebird = require('bluebird'),
+    TabbedArea = require('react-bootstrap').TabbedArea,
+    TabPane = require('react-bootstrap').TabPane,
     DateTime = require('../components/DateTime.jsx'),
     Console = require('../components/Console.jsx'),
     HttpClient = require('../services/HttpClient').Raw(),
@@ -21,13 +23,14 @@ var BuildsShow = React.createClass({
 
   getInitialState: function () {
     return {
+      activeTab: 'basic',
       build: this.props.data.build,
       output: ''
     };
   },
 
   componentDidMount: function () {
-    this.update(this.props.data.build.projectCanonicalName, this.props.data.build.number);
+    this.update(this.props.data.build.projectCanonicalName, this.props.data.build.number, 0);
     window.addEventListener('resize', this.updateConsoleHeight);
     this.updateConsoleHeight();
   },
@@ -43,11 +46,12 @@ var BuildsShow = React.createClass({
 
   componentWillReceiveProps: function (nextProps) {
     this.setState({
+      activeTab: 'basic',
       build: nextProps.data.build,
       output: ''
     });
     window.clearTimeout(this.outputTimeout);
-    this.update(nextProps.data.build.projectCanonicalName, nextProps.data.build.number);
+    this.update(nextProps.data.build.projectCanonicalName, nextProps.data.build.number, 0);
   },
 
   updateConsoleHeight: function () {
@@ -61,6 +65,11 @@ var BuildsShow = React.createClass({
     element.style.height = Math.max(windowHeight - bodyHeight + elementHeight - 1, 200) + 'px';
   },
 
+  updateActiveTab: function (key) {
+    this.setState({ activeTab: key });
+    this.updateConsoleHeight();
+  },
+
   scrollConsoleToEnd: function () {
     var element = this.refs.console.getDOMNode();
     element.scrollTop = element.scrollHeight;
@@ -68,7 +77,10 @@ var BuildsShow = React.createClass({
 
   rerun: function () {
     JsonClient.post('/api/builds/' + this.state.build.id + '/rerun').then(build => {
-      this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
+      this.context.router.transitionTo('builds-show', {
+        projectCanonicalName: build.projectCanonicalName,
+        buildNumber: build.number
+      });
     });
   },
 
@@ -81,49 +93,58 @@ var BuildsShow = React.createClass({
 
     return (
       <div>
-        <h1>Build {this.state.build.projectCanonicalName} #{this.state.build.number}</h1>
-        <p><button onClick={this.rerun} className="btn btn-primary">RERUN</button></p>
-        <dl>
-          <dt>Status</dt>
-          <dd><span className={'build-' + this.state.build.status.type}/></dd>
-          <dt>Message</dt>
-          <dd><pre>{message}</pre></dd>
-          <dt>Project</dt>
-          <dd><Link to="projects-show" params={{projectCanonicalName: this.state.build.projectCanonicalName}}>{this.state.build.projectCanonicalName}</Link></dd>
-          <dt>Image</dt>
-          <dd>{this.state.build.image}</dd>
-          <dt>Script</dt>
-          <dd><pre>{this.state.build.script}</pre></dd>
-          <dt>Environment</dt>
-          <dd><pre>{this.state.build.environment.map(e => e.name + '=' + e.value).join('\n')}</pre></dd>
-          <dt>Created at</dt>
-          <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
-          <dt>Updated at</dt>
-          <dd><DateTime value={this.state.build.updatedAt} kind="relative"/></dd>
-          <dt>Started at</dt>
-          <dd><DateTime value={this.state.build.status.startedAt} kind="relative"/></dd>
-          <dt>Finished at</dt>
-          <dd>
-            <span className="glyphicon glyphicon-calendar"/>&nbsp;
-            <DateTime value={this.state.build.status.finishedAt} kind="relative"/>
-          </dd>
-          <dt>Duration</dt>
-          <dd>
-            <span className="glyphicon glyphicon-time"/>&nbsp;
-            <DateTime value={duration} kind="duration"/>
-          </dd>
-          <dt>Output</dt>
-          <dd>
-            <Console content={this.state.output} ref="console"/>
-          </dd>
-        </dl>
+        <TabbedArea activeKey={this.state.activeTab} onSelect={this.updateActiveTab} animation={false}>
+          <TabPane eventKey="basic" tab="Basic">
+            <button onClick={this.rerun} className="btn btn-primary pull-right">Rerun</button>
+            <h3>
+              <span className={'build-' + this.state.build.status.type}/>
+              <Link to="projects-show" params={{projectCanonicalName: this.state.build.projectCanonicalName}}>
+                {this.state.build.projectCanonicalName}
+              </Link>
+              #{this.state.build.number}
+            </h3>
+            <pre>{message}</pre>
+          </TabPane>
+          <TabPane eventKey="runtime" tab="Runtime">
+            <dl>
+              <dt>Image</dt>
+              <dd>{this.state.build.image}</dd>
+              <dt>Script</dt>
+              <dd><pre>{this.state.build.script}</pre></dd>
+              <dt>Environment</dt>
+              <dd><pre>{this.state.build.environment.map(e => e.name + '=' + e.value).join('\n')}</pre></dd>
+            </dl>
+          </TabPane>
+          <TabPane eventKey="timings" tab="Timings">
+            <dl>
+              <dd><pre>{this.state.build.environment.map(e => e.name + '=' + e.value).join('\n')}</pre></dd>
+              <dt>Created at</dt>
+              <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
+              <dt>Updated at</dt>
+              <dd><DateTime value={this.state.build.updatedAt} kind="relative"/></dd>
+              <dt>Started at</dt>
+              <dd><DateTime value={this.state.build.status.startedAt} kind="relative"/></dd>
+              <dt>Finished at</dt>
+              <dd>
+                <span className="glyphicon glyphicon-calendar"/>&nbsp;
+                <DateTime value={this.state.build.status.finishedAt} kind="relative"/>
+              </dd>
+              <dt>Duration</dt>
+              <dd>
+                <span className="glyphicon glyphicon-time"/>&nbsp;
+                <DateTime value={duration} kind="duration"/>
+              </dd>
+            </dl>
+          </TabPane>
+        </TabbedArea>
+        <Console content={this.state.output} ref="console"/>
       </div>
     );
   },
 
-  update: function (projectCanonicalName, buildNumber) {
+  update: function (projectCanonicalName, buildNumber, skip) {
     var build = JsonClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
-    var output = HttpClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + this.state.output.length, true);
+    var output = HttpClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + skip, true);
 
     Bluebird.join(build, output, (build, output) => {
       if (this.props.data.build.projectCanonicalName == projectCanonicalName && this.props.data.build.number == buildNumber) {
@@ -135,7 +156,7 @@ var BuildsShow = React.createClass({
 
         if (['succeeded', 'failed'].indexOf(build.status.type) < 0) {
           this.outputTimeout = window.setTimeout(function () {
-            this.update(projectCanonicalName, buildNumber);
+            this.update(projectCanonicalName, buildNumber, this.state.output.length);
           }.bind(this), 1000);
         }
       }
