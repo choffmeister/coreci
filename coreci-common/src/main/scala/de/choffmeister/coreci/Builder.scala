@@ -23,7 +23,7 @@ class Builder(db: Database, docker: Docker)
 
     def prepareOutputFlow(startIndex: Long) = Flow[DockerBuildOutput]
       .map {
-        case DockerBuildStream(msg) => msg
+        case DockerBuildStream(msg) => ""
         case DockerBuildStatusProgress("Downloading") => ""
         case DockerBuildStatusProgress("Extracting") => ""
         case DockerBuildStatusProgress(msg) => msg + "\n"
