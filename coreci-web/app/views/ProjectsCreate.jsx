@@ -26,7 +26,8 @@ var ProjectsCreate = React.createClass({
       title: 'My project',
       description: '',
       image: 'busybox:latest',
-      script: '#!/bin/sh -e\n\necho hello world\n\nexit 0\n'
+      script: '#!/bin/sh -e\n\necho hello world\n\nexit 0\n',
+      environment: 'KEY=value'
     };
   },
 
@@ -39,6 +40,18 @@ var ProjectsCreate = React.createClass({
       description: this.state.description,
       image: this.state.image,
       script: this.state.script,
+      environment: this.state.environment.split(/\r\n|\n/).map(l => {
+        var match = l.match(/^\s*([a-zA-Z0-9_]+)\s*=\s*(.*)\s*$/);
+        if (match) {
+          return {
+            name: match[1].trim(),
+            value: match[2].trim(),
+            secret: false
+          };
+        } else {
+          return null;
+        }
+      }).filter(ev => ev !== null),
       id: '000000000000000000000000',
       userId: '000000000000000000000000',
       nextBuildNumber: 1,
@@ -60,6 +73,7 @@ var ProjectsCreate = React.createClass({
           <Input type="textarea" label="Description" valueLink={this.linkState('description')} rows="6"/>
           <Input type="text" label="Image" valueLink={this.linkState('image')}/>
           <Input type="textarea" label="Script" valueLink={this.linkState('script')} rows="10"/>
+          <Input type="textarea" label="Environment" valueLink={this.linkState('environment')} rows="4"/>
           <Button onClick={this.onSubmit} type="submit">Create</Button>
         </form>
       </div>

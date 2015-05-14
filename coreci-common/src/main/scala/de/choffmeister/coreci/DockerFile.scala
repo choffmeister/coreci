@@ -22,6 +22,9 @@ case class Dockerfile(instructions: Seq[DockerfileInstruction]) {
   def run(command: String): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("RUN", command))
 
+  def env(key: String, value: String): Dockerfile =
+    copy(instructions = instructions :+ DockerfileInstruction("ENV", key + "=\"" + value.replace("\"", "\\\"") + "\""))
+
   def expose(port: Int): Dockerfile =
     copy(instructions = instructions :+ DockerfileInstruction("EXPOSE", port.toString))
 

@@ -18,14 +18,12 @@ class Builder(db: Database, docker: Docker)
   def run(pending: Build): Future[Build] = {
     log.info(s"Running build ${pending.id} on image ${pending.image}")
     val startedAt = now
-    val dockerfile = pending.environment.foldLeft(Dockerfile.from(pending.image))((df, env) => df.env(env.name, env.value))
-      .add(".", "/coreci")
-      .run("chmod +x /coreci/build")
+    val dockerfile = Dockerfile.from(pending.image).add(".", "/coreci").run("chmod +x /coreci/build")
     val context = Dockerfile.createTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
 
     def prepareOutputFlow(startIndex: Long) = Flow[DockerBuildOutput]
       .map {
-        case DockerBuildStream(msg) => msg
+        case DockerBuildStream(msg) => ""
         case DockerBuildStatusProgress("Downloading") => ""
         case DockerBuildStatusProgress("Extracting") => ""
         case DockerBuildStatusProgress(msg) => msg + "\n"
@@ -51,7 +49,7 @@ class Builder(db: Database, docker: Docker)
       started <- db.builds.update(pending.copy(status = Running(startedAt)))
       prepare <- docker.buildImage(context, pull = true, forceRemove = true, noCache = true)
       lastPrepareIndex <- prepare.stream.via(prepareOutputFlow(0L)).runFold(0L)((_, s) => s.index + 1)
-      run <- docker.runImage(prepare.imageName, "/coreci/build" :: Nil)
+      run <- docker.runImage(prepare.imageName, "/coreci/build" :: Nil, pending.environment.map(ev => ev.name -> ev.value).toMap)
       lastRunIndex <- run.stream.via(runOutputFlow(lastPrepareIndex)).runFold(0L)((_, s) => s.index)
       info <- docker.inspectContainer(run.containerId)
         .andThen { case _ => docker.deleteContainer(run.containerId, force = true) }

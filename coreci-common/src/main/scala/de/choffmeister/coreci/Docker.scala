@@ -71,6 +71,7 @@ class Docker(host: String, port: Int)
   }
 
   def buildImage[T](tar: Source[ByteString, Unit], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
+    log.info(s"Building image")
     val nameOrRandom = name.getOrElse(java.util.UUID.randomUUID().toString)
     val uri = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=1&nocache=$noCache")
     val entity = HttpEntity.Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
@@ -115,50 +116,53 @@ class Docker(host: String, port: Int)
   }
 
   def deleteImage(name: String, force: Boolean = false, noPrune: Boolean = false): Future[Unit] = {
-    log.debug(s"Deleting image $name")
+    log.info(s"Deleting image $name")
     jsonRequest(DELETE, Uri(s"/images/$name?force=$force&noprune=$noPrune")).map(_ => ())
   }
 
-  def runImage[T](name: String, command: List[String]): Future[DockerRun] = {
+  def runImage[T](name: String, command: List[String], environment: Map[String, String]): Future[DockerRun] = {
+    log.info(s"Running image $name")
     for {
-      id <- createContainer(name, command)
+      id <- createContainer(name, command, environment)
       s <- attachToContainer(id)
       _ <- startContainer(id)
     } yield DockerRun(id, s)
   }
 
-  def createContainer(name: String, command: List[String]): Future[String] = {
+  def createContainer(name: String, command: List[String], environment: Map[String, String]): Future[String] = {
+    log.debug(s"Creating container from $name")
     val payload = JsObject(
       "Image" -> JsString(name),
       "Tty" -> JsBoolean(true),
-      "Cmd" -> JsArray(command.map(JsString.apply).toVector)
+      "Cmd" -> JsArray(command.map(JsString.apply).toVector),
+      "Env" -> JsArray(environment.map(ev => ev._1 + "=" + ev._2).map(JsString.apply).toVector)
     )
-
-    log.debug(s"Creating container from $name")
     jsonRequest(POST, Uri("/containers/create"), Some(payload))
       .map(_.get.asJsObject)
       .map { json =>
         val id = json.fields("Id").asInstanceOf[JsString].value
-        log.info(s"Created container $id")
+        log.info(s"Created container $id from $name")
         id
       }
   }
 
   def deleteContainer(id: String, force: Boolean = false): Future[Unit] = {
-    log.debug(s"Deleting container $id")
+    log.info(s"Deleting container $id")
     jsonRequest(DELETE, Uri(s"/containers/$id?force=$force")).map(_ => ())
   }
 
   def inspectContainer(id: String): Future[DockerContainerInspection] = {
+    log.debug(s"Inspecting container $id")
     jsonRequest(GET, Uri(s"/containers/$id/json")).map(_.get.asJsObject).map(DockerJsonProtocol.readContainerInspection)
   }
 
   def startContainer(id: String): Future[Unit] = {
-    log.debug(s"Starting container $id")
+    log.info(s"Starting container $id")
     jsonRequest(POST, Uri(s"/containers/$id/start")).map(_ => ())
   }
 
   def attachToContainer(id: String): Future[Source[ByteString, Any]] = {
+    log.debug(s"Attaching to container $id")
     rawRequest(POST, Uri(s"/containers/$id/attach?logs=true&stream=true&stdout=true&stderr=true")).map(_.entity.dataBytes)
   }
 

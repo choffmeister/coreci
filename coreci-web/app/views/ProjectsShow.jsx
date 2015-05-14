@@ -76,6 +76,8 @@ var ProjectsShow = React.createClass({
           <dd>{project.image}</dd>
           <dt>Script</dt>
           <dd><pre>{project.script}</pre></dd>
+          <dt>Environment</dt>
+          <dd><pre>{project.environment.map(e => e.name + '=' + e.value).join('\n')}</pre></dd>
         </dl>
         {buildList}
       </div>
