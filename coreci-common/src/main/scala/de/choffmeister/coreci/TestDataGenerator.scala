@@ -31,15 +31,17 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     description = s"This is Project #$i",
     image = "node:0.10",
     script = i match {
-      case 1 => "#!/bin/bash\n\nnpm install -g gulp --no-spin\n"
+      case 1 => "#!/bin/bash\n\necho $PUBLIC\necho $PRIVATE\n\nnpm install -g gulp --no-spin\n"
       case _ => "#!/bin/bash\n\nuname -a\n"
-    })
+    },
+    environment = EnvironmentVariable("PUBLIC", "public", secret = false) :: EnvironmentVariable("PRIVATE", "private", secret = true) :: Nil)
 
   private def build(project: Project, i: Int) = Build(
     projectId = project.id,
     status = Succeeded(now, now),
     image = project.image,
-    script = project.script)
+    script = project.script,
+    environment = project.environment)
 
   private def output(build: Build, i: Int) = Output(
     buildId = build.id,

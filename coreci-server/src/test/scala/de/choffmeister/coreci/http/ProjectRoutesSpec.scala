@@ -16,15 +16,15 @@ class ProjectRoutesSpec extends Specification with Specs2RouteTest {
         val projects = await(db.projects.list(page = (None, None)))
 
         Get("/projects") ~> routes ~> check {
-          responseAs[List[Project]] === projects
+          responseAs[List[Project]] === projects.map(_.defused)
         }
 
         Get("/projects?skip=0&limit=1") ~> routes ~> check {
-          responseAs[List[Project]] === List(projects(0))
+          responseAs[List[Project]] === List(projects(0)).map(_.defused)
         }
 
         Get("/projects?skip=1&limit=1") ~> routes ~> check {
-          responseAs[List[Project]] === List(projects(1))
+          responseAs[List[Project]] === List(projects(1)).map(_.defused)
         }
       }
     }
@@ -39,11 +39,11 @@ class ProjectRoutesSpec extends Specification with Specs2RouteTest {
         }
 
         Get(s"/projects/${projects(0).canonicalName}") ~> routes ~> check {
-          responseAs[Project] === projects(0)
+          responseAs[Project] === projects(0).defused
         }
 
         Get(s"/projects/${projects(1).canonicalName}") ~> routes ~> check {
-          responseAs[Project] === projects(1)
+          responseAs[Project] === projects(1).defused
         }
       }
     }

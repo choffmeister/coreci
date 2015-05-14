@@ -94,6 +94,8 @@ var BuildsShow = React.createClass({
           <dd>{this.state.build.image}</dd>
           <dt>Script</dt>
           <dd><pre>{this.state.build.script}</pre></dd>
+          <dt>Environment</dt>
+          <dd><pre>{this.state.build.environment.map(e => e.name + '=' + e.value).join('\n')}</pre></dd>
           <dt>Created at</dt>
           <dd><DateTime value={this.state.build.createdAt} kind="relative"/></dd>
           <dt>Updated at</dt>

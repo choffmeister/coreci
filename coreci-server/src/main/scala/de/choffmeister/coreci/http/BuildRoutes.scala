@@ -14,7 +14,7 @@ class BuildRoutes(val database: Database, workerHandler: ActorRef)
     pathEnd {
       get {
         pageable { page =>
-          complete(database.builds.list(page = page))
+          complete(database.builds.list(page = page).map(_.map(_.defused)))
         }
       }
     } ~
@@ -27,7 +27,7 @@ class BuildRoutes(val database: Database, workerHandler: ActorRef)
                 complete {
                   database.builds.insert(build.copy(status = Pending)).map { renewedBuild =>
                     workerHandler ! WorkerHandlerProtocol.DispatchBuild
-                    renewedBuild
+                    renewedBuild.defused
                   }
                 }
               }

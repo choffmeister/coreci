@@ -20,9 +20,13 @@ case class Build(
   status: BuildStatus = Pending,
   image: String,
   script: String,
+  environment: List[EnvironmentVariable] = Nil,
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0),
   projectCanonicalName: String = "") extends BaseModel
+{
+  def defused: Build = this.copy(environment = this.environment.map(_.defused))
+}
 
 class BuildTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Build](database, collection) {
   implicit val reader = BuildJSONFormat.Reader
@@ -115,6 +119,9 @@ object BuildJSONFormat {
     }
   }
 
+  implicit val environmentVariableReader = EnvironmentVariableBSONFormat.Reader
+  implicit val environmentVariableWriter = EnvironmentVariableBSONFormat.Writer
+
   implicit object Reader extends BSONDocumentReader[Build] {
     def read(doc: BSONDocument): Build = Build(
       id = doc.getAs[BSONObjectID]("_id").get,
@@ -123,6 +130,7 @@ object BuildJSONFormat {
       status = doc.getAs[BuildStatus]("status").get,
       image = doc.getAs[String]("image").get,
       script = doc.getAs[String]("script").get,
+      environment = doc.getAs[List[EnvironmentVariable]]("environment").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
       projectCanonicalName = doc.getAs[String]("projectCanonicalName").get
@@ -137,6 +145,7 @@ object BuildJSONFormat {
       "status" -> obj.status,
       "image" -> obj.image,
       "script" -> obj.script,
+      "environment" -> obj.environment,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt,
       "projectCanonicalName" -> obj.projectCanonicalName

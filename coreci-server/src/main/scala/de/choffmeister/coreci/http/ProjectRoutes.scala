@@ -15,14 +15,14 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
     pathEnd {
       get {
         pageable { page =>
-          complete(database.projects.list(page = page))
+          complete(database.projects.list(page = page).map(_.map(_.defused)))
         }
       } ~
       post {
         authenticate() { user =>
           entity(as[Project]) { project =>
             complete {
-              database.projects.insert(project.copy(userId = user.id))
+              database.projects.insert(project.copy(userId = user.id)).map(_.defused)
             }
           }
         }
@@ -33,16 +33,16 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
         case Some(project) =>
           pathEnd {
             get {
-              complete(project)
+              complete(project.defused)
             }
           } ~
           path("run") {
             post {
               authenticate() { user =>
                 complete {
-                  database.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)).map { build =>
+                  database.builds.insert(Build(projectId = project.id, image = project.image, script = project.script, environment = project.environment)).map { build =>
                     workerHandler ! WorkerHandlerProtocol.DispatchBuild
-                    build
+                    build.defused
                   }
                 }
               }
@@ -52,7 +52,7 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
             pathEnd {
               get {
                 pageable { page =>
-                  complete(database.builds.listByProject(project.id, page))
+                  complete(database.builds.listByProject(project.id, page).map(_.map(_.defused)))
                 }
               }
             } ~
@@ -61,7 +61,7 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
                 case Some(build) =>
                   pathEnd {
                     get {
-                      complete(build)
+                      complete(build.defused)
                     }
                   } ~
                   path("output") {

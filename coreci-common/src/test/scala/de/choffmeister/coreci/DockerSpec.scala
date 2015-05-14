@@ -103,7 +103,7 @@ class DockerSpec extends Specification with NoTimeConversions {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val command = "uname" :: "-a" :: Nil
         val future  = for {
-          run <- docker.runImage("busybox:latest", command)
+          run <- docker.runImage("busybox:latest", command, Map.empty)
           output <- run.stream.runFold("")(_ + _.utf8String).andThen { case _ => docker.deleteContainer(run.containerId, force = true) }
         } yield output
 
