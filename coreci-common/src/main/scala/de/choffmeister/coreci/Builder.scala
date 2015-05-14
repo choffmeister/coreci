@@ -18,7 +18,7 @@ class Builder(db: Database, docker: Docker)
   def run(pending: Build): Future[Build] = {
     log.info(s"Running build ${pending.id} on image ${pending.image}")
     val startedAt = now
-    val dockerfile = Dockerfile.from(pending.image)
+    val dockerfile = pending.environment.foldLeft(Dockerfile.from(pending.image))((df, env) => df.env(env.name, env.value))
       .add(".", "/coreci")
       .run("chmod +x /coreci/build")
     val context = Dockerfile.createTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
@@ -53,9 +53,9 @@ class Builder(db: Database, docker: Docker)
       lastPrepareIndex <- prepare.stream.via(prepareOutputFlow(0L)).runFold(0L)((_, s) => s.index + 1)
       run <- docker.runImage(prepare.imageName, "/coreci/build" :: Nil)
       lastRunIndex <- run.stream.via(runOutputFlow(lastPrepareIndex)).runFold(0L)((_, s) => s.index)
+      info <- docker.inspectContainer(run.containerId)
         .andThen { case _ => docker.deleteContainer(run.containerId, force = true) }
         .andThen { case _ => docker.deleteImage(prepare.imageName, force = true) }
-      info <- docker.inspectContainer(run.containerId)
       finished <- info.stateExitCode match {
         case 0 => db.builds.update(pending.copy(status = Succeeded(startedAt, now)))
         case exitCode => db.builds.update(pending.copy(status = Failed(startedAt, now, s"Exit code $exitCode")))

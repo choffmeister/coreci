@@ -40,7 +40,7 @@ class DatabaseSpec extends Specification with NoTimeConversions{
     Await.result(f, 10.seconds)
 
   private def entity[T <: BaseModel, T2](name: String, table: Database => Table[T], prepare: Database => T2)(generator: Either[(T2, Int), T] => T) = {
-    ("work with " + name) in TestDatabase { db =>
+    ("work with " + name) in TestDatabase(prefill = false) { db =>
       val tab = table(db)
       val prepared = prepare(db)
 

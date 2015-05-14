@@ -48,6 +48,7 @@ object Build extends sbt.Build {
     .settings(libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
       "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-RC2",
+      "com.typesafe.akka" %% "akka-http-testkit-scala-experimental" % "1.0-RC2" % "test",
       "org.rogach" %% "scallop" % "0.9.5",
       "org.specs2" %% "specs2" % "2.4.1" % "test"))
     .settings(serverPackSettings: _*)

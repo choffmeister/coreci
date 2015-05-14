@@ -13,10 +13,10 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     val um = new UserManager(conf.passwordHashAlgorithm, conf.passwordHashAlgorithmConfig, db)
 
     for {
-      users <- seq((1 to 3).map(i => um.createUser(user(i), s"pass$i")))
-      projects <- seq((1 to 3).map(i => db.projects.insert(project(users.head, i))))
-      builds <- seq((1 to 3).map(i => db.builds.insert(build(projects.head, i))))
-      outputs <- seq(builds.flatMap(b => (1 to 3).map(i => db.outputs.insert(output(b, i)))))
+      users <- seq((1 to 2).map(i => um.createUser(user(i), s"pass$i")))
+      projects <- seq((1 to 2).map(i => db.projects.insert(project(users.head, i))))
+      builds <- seq((1 to 2).map(i => db.builds.insert(build(projects.head, i))))
+      outputs <- seq(builds.flatMap(b => (1 to 2).map(i => db.outputs.insert(output(b, i)))))
     } yield ()
   }
 
