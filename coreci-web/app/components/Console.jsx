@@ -4,6 +4,7 @@ var React = require('react');
 
 var regex = /((?:\u001b\[)|\u009b)(?:((?:[0-9]{1,3})?(?:(?:;[0-9]{0,3})*)?)([A-M|f-m]))|(\u001b[A-M])/g;
 var colorTable = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'];
+var seenUnsupported = [];
 
 var convertColorsAnsiToHtml = function (raw) {
   var fgColor = null;
@@ -32,9 +33,11 @@ var convertColorsAnsiToHtml = function (raw) {
       classes = classes.filter(c => c).map(c => 'console-output-' + c).join(' ');
 
       return '</span><span class="' + classes + '">';
-    } else if (a == '\u001b\[' && ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'f'].indexOf(c) >= 0) {
-      return '\n';
     } else {
+      if (seenUnsupported.indexOf(csi) < 0) {
+        console.warn('Unsupported ANSI escape sequence ' + JSON.stringify(csi));
+        seenUnsupported.push(csi);
+      }
       return '';
     }
   });
