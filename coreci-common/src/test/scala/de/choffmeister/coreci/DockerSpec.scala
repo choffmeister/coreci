@@ -1,5 +1,6 @@
 package de.choffmeister.coreci
 
+import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import org.specs2.mutable._
 
@@ -103,12 +104,32 @@ class DockerSpec extends Specification {
       within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val command = "uname" :: "-a" :: Nil
-        val future  = for {
+        val future = for {
           run <- docker.runImage("busybox:latest", command, Map.empty)
           output <- run.stream.runFold("")(_ + _.utf8String).andThen { case _ => docker.deleteContainer(run.containerId, force = true) }
         } yield output
 
         await(future) must contain("GNU/Linux")
+      }
+    }
+
+    "build, run and clean" in new TestActorSystem {
+      within(timeout) {
+        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val tar = Dockerfile.createTarBall(Dockerfile.from("busybox:latest"), Map.empty)
+        val future = docker.buildRunClean(tar, "uname" :: "-a" :: Nil, Map.empty).runFold("")(_ + _)
+
+        await(future) must contain("GNU/Linux")
+      }
+    }
+
+    "build, run and clean" in new TestActorSystem {
+      within(timeout) {
+        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val tar = Dockerfile.createTarBall(Dockerfile.from("busybox:latest"), Map.empty)
+        val future = docker.buildRunClean(tar, "uname" :: "-a" :: Nil, Map.empty).to(Sink.ignore).run()
+
+        await(future).stateExitCode === 0
       }
     }
   }

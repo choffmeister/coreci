@@ -6,13 +6,17 @@ import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
-import akka.stream.FlowMaterializer
+import akka.stream.actor._
+import akka.stream.actor.ActorPublisherMessage._
+import akka.stream._
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import spray.json._
 
+import scala.annotation.tailrec
 import scala.concurrent._
 import scala.concurrent.duration._
+import scala.util._
 
 case class DockerVersion(
   apiVersion: String,
@@ -70,10 +74,80 @@ class Docker(host: String, port: Int)
     }
   }
 
-  def buildImage[T](tar: Source[ByteString, Unit], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
+  def buildRunClean(tar: Source[ByteString, Unit], command: List[String], environment: Map[String, String], maxBufferSize: Long = 1024 * 1024): Source[String, Future[DockerContainerInspection]] = {
+    val buildOutputFlow = Flow[DockerBuildOutput]
+      .map {
+        case DockerBuildStream(msg) => ""
+        case DockerBuildStatusProgress("Downloading") => ""
+        case DockerBuildStatusProgress("Extracting") => ""
+        case DockerBuildStatusProgress(msg) => msg + "\n"
+        case DockerBuildStatus(msg) => msg + "\n"
+        case DockerBuildError(msg) => msg + "\n"
+      }
+      .filter(_.nonEmpty)
+
+    val runOutputFlow = Flow[ByteString]
+      .map(_.utf8String)
+
+    val promise = Promise[DockerContainerInspection]()
+    Source.actorPublisher[String](Props(new ActorPublisher[String] {
+      var buffer = Vector.empty[String]
+      var bufferSize = 0L
+
+      buildImage(tar, pull = true, forceRemove = true, noCache = true).flatMap { build =>
+        build.stream.via(buildOutputFlow).runForeach(self ! _).flatMap { _ =>
+          runImage(build.imageName, command, environment).flatMap { run =>
+            run.stream.via(runOutputFlow).runForeach(self ! _).flatMap { _ =>
+              inspectContainer(run.containerId)
+            }.andThen { case _ => deleteContainer(run.containerId, force = true) }
+          }
+        }.andThen { case _ => deleteImage(build.imageName, force = true) }
+      }.onComplete(self ! _)
+
+      override def receive = {
+        case Success(info: DockerContainerInspection) if buffer.isEmpty =>
+          onCompleteThenStop()
+          promise.success(info)
+        case Success(info) =>
+          self ! Success(info)
+        case Failure(err) =>
+          onErrorThenStop(err)
+          promise.tryFailure(err)
+        case chunk: String =>
+          if (bufferSize + chunk.length < maxBufferSize) {
+            buffer :+= chunk
+            bufferSize += chunk.length
+            deliver()
+          } else {
+            val err = new Exception("Exceeded max buffer size")
+            onErrorThenStop(err)
+            promise.tryFailure(err)
+          }
+        case r @ Request(_) =>
+          deliver()
+        case c @ Cancel =>
+          val err = new Exception("Cancelled subscription")
+          context.stop(self)
+          promise.tryFailure(err)
+      }
+
+      @tailrec
+      final def deliver(): Unit = {
+        if (buffer.nonEmpty && totalDemand > 0) {
+          val next = buffer.head
+          buffer = buffer.tail
+          bufferSize -= next.length
+          onNext(next)
+          deliver()
+        }
+      }
+    })).mapMaterialized(_ => promise.future)
+  }
+
+  def buildImage(tar: Source[ByteString, Unit], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
     log.info(s"Building image")
     val nameOrRandom = name.getOrElse(java.util.UUID.randomUUID().toString)
-    val uri = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=1&nocache=$noCache")
+    val uri = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=$forceRemove&nocache=$noCache")
     val entity = HttpEntity.Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
 
     val toBuildOutputStream = Flow[ByteString]
@@ -186,7 +260,7 @@ class Docker(host: String, port: Int)
         case res if res.status.isSuccess() =>
           res.entity.toStrict(3.second).map {
             case body if body.data == ByteString("OK") => Some(JsString("OK"))
-            case body if body.data.length > 0 => Some(JsonParser(ParserInput(body.data.utf8String)))
+            case body if body.data.nonEmpty => Some(JsonParser(ParserInput(body.data.utf8String)))
             case _ => None
           }
         case res =>
