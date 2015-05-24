@@ -74,7 +74,8 @@ class Docker(host: String, port: Int)
     }
   }
 
-  def buildRunClean(tar: Source[ByteString, Unit], command: List[String], environment: Map[String, String], maxBufferSize: Long = 1024 * 1024): Source[String, Future[DockerContainerInspection]] = {
+  def buildRunClean(tar: Source[ByteString, Unit], command: List[String], environment: Map[String, String], maxOutputSize: Long = 1024 * 1024):
+      Source[String, Future[(Either[Throwable, DockerContainerInspection], String)]] = {
     val buildOutputFlow = Flow[DockerBuildOutput]
       .map {
         case DockerBuildStream(msg) => ""
@@ -89,10 +90,11 @@ class Docker(host: String, port: Int)
     val runOutputFlow = Flow[ByteString]
       .map(_.utf8String)
 
-    val promise = Promise[DockerContainerInspection]()
+    val promise = Promise[(Either[Throwable, DockerContainerInspection], String)]()
     Source.actorPublisher[String](Props(new ActorPublisher[String] {
       var buffer = Vector.empty[String]
       var bufferSize = 0L
+      var bufferPosition = 0
 
       buildImage(tar, pull = true, forceRemove = true, noCache = true).flatMap { build =>
         build.stream.via(buildOutputFlow).runForeach(self ! _).flatMap { _ =>
@@ -105,38 +107,37 @@ class Docker(host: String, port: Int)
       }.onComplete(self ! _)
 
       override def receive = {
-        case Success(info: DockerContainerInspection) if buffer.isEmpty =>
+        case Success(info: DockerContainerInspection) if bufferPosition == buffer.length =>
           onCompleteThenStop()
-          promise.success(info)
+          promise.success((Right(info), buffer.fold("")(_ + _)))
         case Success(info) =>
           self ! Success(info)
         case Failure(err) =>
           onErrorThenStop(err)
-          promise.tryFailure(err)
+          promise.trySuccess((Left(err), buffer.fold("")(_ + _)))
         case chunk: String =>
-          if (bufferSize + chunk.length < maxBufferSize) {
+          if (bufferSize + chunk.length < maxOutputSize) {
             buffer :+= chunk
             bufferSize += chunk.length
             deliver()
           } else {
             val err = new Exception("Exceeded max buffer size")
             onErrorThenStop(err)
-            promise.tryFailure(err)
+            promise.trySuccess((Left(err), buffer.fold("")(_ + _)))
           }
         case r @ Request(_) =>
           deliver()
         case c @ Cancel =>
           val err = new Exception("Cancelled subscription")
           context.stop(self)
-          promise.tryFailure(err)
+          promise.trySuccess((Left(err), buffer.fold("")(_ + _)))
       }
 
       @tailrec
       final def deliver(): Unit = {
-        if (buffer.nonEmpty && totalDemand > 0) {
-          val next = buffer.head
-          buffer = buffer.tail
-          bufferSize -= next.length
+        if (bufferPosition < buffer.length && totalDemand > 0) {
+          val next = buffer(bufferPosition)
+          bufferPosition += 1
           onNext(next)
           deliver()
         }

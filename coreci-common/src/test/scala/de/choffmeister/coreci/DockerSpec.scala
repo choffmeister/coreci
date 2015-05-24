@@ -1,6 +1,6 @@
 package de.choffmeister.coreci
 
-import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl._
 import akka.util.ByteString
 import org.specs2.mutable._
 
@@ -113,23 +113,38 @@ class DockerSpec extends Specification {
       }
     }
 
-    "build, run and clean" in new TestActorSystem {
+    "build, run and clean successful" in new TestActorSystem {
       within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val tar = Dockerfile.createTarBall(Dockerfile.from("busybox:latest"), Map.empty)
-        val future = docker.buildRunClean(tar, "uname" :: "-a" :: Nil, Map.empty).runFold("")(_ + _)
+        val future = docker.buildRunClean(tar, "uname" :: "-a" :: Nil, Map.empty).toMat(Sink.fold("")(_ + _))(_ zip _).run()
 
-        await(future) must contain("GNU/Linux")
+        await(future)._1._1 must beRight
+        await(future)._1._1.right.get.stateExitCode === 0
+        await(future)._1._2 must contain("GNU/Linux")
+        await(future)._1._2 === await(future)._2
       }
     }
 
-    "build, run and clean" in new TestActorSystem {
+    "build, run and clean failing" in new TestActorSystem {
       within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val tar = Dockerfile.createTarBall(Dockerfile.from("busybox:latest"), Map.empty)
-        val future = docker.buildRunClean(tar, "uname" :: "-a" :: Nil, Map.empty).to(Sink.ignore).run()
+        val future = docker.buildRunClean(tar, "sh" :: "unknowncmd" :: Nil, Map.empty).toMat(Sink.foreach(_ => ()))(Keep.left).run()
 
-        await(future).stateExitCode === 0
+        await(future)._1 must beRight
+        await(future)._1.right.get.stateExitCode === 2
+      }
+    }
+
+    "build, run and clean erroring" in new TestActorSystem {
+      within(timeout) {
+        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val tar = Dockerfile.createTarBall(Dockerfile.from("unknownimage"), Map.empty)
+        val future = docker.buildRunClean(tar, Nil, Map.empty).toMat(Sink.foreach(_ => ()))(Keep.left).run()
+
+        await(future)._1 must beLeft
+        await(future)._2 must contain("unknownimage")
       }
     }
   }
