@@ -6,3 +6,4 @@ test:
   pre:
     - echo "DOCKER_OPTS=\"-s btrfs -e lxc -H=tcp://127.0.0.1:2375\"" | sudo tee --append /etc/default/docker
     - sudo service docker restart
+    - docker pull busybox:latest
