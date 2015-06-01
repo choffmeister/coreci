@@ -3,12 +3,16 @@ package de.choffmeister.coreci.http
 import akka.http.scaladsl.model.headers.{OAuth2BearerToken, BasicHttpCredentials, HttpChallenge}
 import akka.http.scaladsl.server.AuthenticationFailedRejection
 import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsMissing
+import akka.http.scaladsl.testkit.RouteTestTimeout
 import de.choffmeister.auth.common._
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.models._
 import org.specs2.mutable._
+import org.specs2.time.NoTimeConversions
 
-class AuthRoutesSpec extends Specification with Specs2RouteTest {
+import scala.concurrent.duration._
+
+class AuthRoutesSpec extends Specification with Specs2RouteTest with NoTimeConversions {
   implicit val oauth2AccessTokenResponseFormat = OAuth2AccessTokenResponseFormat
 
   "AuthRoutes" should {
@@ -61,7 +65,7 @@ class AuthRoutesSpec extends Specification with Specs2RouteTest {
       }
     }
 
-    "GET /auth/token/create"  in new TestActorSystem {
+    "GET /auth/token/create" in new TestActorSystem {
       TestDatabase(prefill = true) { db =>
         val routes = new ApiRoutes(db, self).routes
         val users = await(db.users.all)
@@ -80,7 +84,9 @@ class AuthRoutesSpec extends Specification with Specs2RouteTest {
       }
     }
 
-    "GET /auth/token/renew"  in new TestActorSystem {
+    "GET /auth/token/renew" in new TestActorSystem {
+      implicit val customTimeout = RouteTestTimeout(5.seconds)
+
       TestDatabase(prefill = true) { db =>
         val routes = new ApiRoutes(db, self).routes
         val config = ServerConfig.load()

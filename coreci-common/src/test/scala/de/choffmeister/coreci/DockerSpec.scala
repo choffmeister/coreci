@@ -7,9 +7,11 @@ import org.specs2.time.NoTimeConversions
 import scala.concurrent.duration._
 
 class DockerSpec extends Specification with NoTimeConversions {
+  val timeout = 60.seconds
+
   "Docker" should {
     "retrieve host version" in new TestActorSystem {
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val future = docker.version()
 
@@ -18,7 +20,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     }
 
     "retrieve host infos" in new TestActorSystem {
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val future = docker.info()
 
@@ -28,7 +30,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     }
 
     "ping host" in new TestActorSystem {
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val future = docker.ping()
 
@@ -37,7 +39,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     }
 
     "build images" in new TestActorSystem {
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val dockerfile = Dockerfile.from("busybox:latest")
           .run("uname -a")
@@ -56,7 +58,7 @@ class DockerSpec extends Specification with NoTimeConversions {
         await(future)._2 === 0
       }
 
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val dockerfile = Dockerfile.from("busybox:latest")
           .run("uname -a")
@@ -76,7 +78,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     }
 
     "build images with context" in new TestActorSystem {
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val dockerfile = Dockerfile.from("busybox:latest")
           .add(".", "/context")
@@ -99,7 +101,7 @@ class DockerSpec extends Specification with NoTimeConversions {
     }
 
     "run images" in new TestActorSystem {
-      within(5.seconds) {
+      within(timeout) {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val command = "uname" :: "-a" :: Nil
         val future  = for {
