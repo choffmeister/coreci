@@ -15,9 +15,12 @@ object Build extends sbt.Build {
     organization := "de.choffmeister")
 
   lazy val resolverSettings = Seq(
-    resolvers += "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/")
+    resolvers ++= Seq(
+      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
+      "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases"))
 
-  lazy val commonSettings = Defaults.coreDefaultSettings ++ coordinateSettings ++ buildSettings ++ resolverSettings
+  lazy val commonSettings = Defaults.coreDefaultSettings ++ coordinateSettings ++ buildSettings ++
+    resolverSettings ++ Seq(libraryDependencies ++= Seq("org.specs2" %% "specs2-core" % "3.3.1" % "test"))
 
   lazy val serverPackSettings = packSettings ++ Seq(
     packMain := Map("coreci" -> "de.choffmeister.coreci.Application"),
@@ -38,8 +41,7 @@ object Build extends sbt.Build {
       "io.spray" %% "spray-json" % "1.3.1",
       "org.apache.commons" % "commons-compress" % "1.9",
       "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.2",
-      "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23",
-      "org.specs2" %% "specs2" % "2.4.1" % "test"))
+      "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-common")
 
@@ -49,8 +51,7 @@ object Build extends sbt.Build {
       "com.typesafe.akka" %% "akka-http-scala-experimental" % "1.0-RC2",
       "com.typesafe.akka" %% "akka-http-spray-json-experimental" % "1.0-RC2",
       "com.typesafe.akka" %% "akka-http-testkit-scala-experimental" % "1.0-RC2" % "test",
-      "org.rogach" %% "scallop" % "0.9.5",
-      "org.specs2" %% "specs2" % "2.4.1" % "test"))
+      "org.rogach" %% "scallop" % "0.9.5"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-server")
     .dependsOn(common % "test->test;compile->compile")
