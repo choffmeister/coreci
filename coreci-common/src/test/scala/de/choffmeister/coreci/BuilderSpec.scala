@@ -10,7 +10,7 @@ class BuilderSpec extends Specification {
   val timeout = 60.seconds
 
   "Builder" should {
-    "runs successful builds" in new TestActorSystem {
+    "runs builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
@@ -27,9 +27,7 @@ class BuilderSpec extends Specification {
         finished.status must beAnInstanceOf[Succeeded]
         finished.output must contain("GNU/Linux")
       })
-    }
 
-    "runs failing builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
@@ -46,9 +44,7 @@ class BuilderSpec extends Specification {
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("Exit code 1")
       })
-    }
 
-    "runs erroring builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
