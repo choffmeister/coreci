@@ -1,5 +1,5 @@
 # Build target
-target/
+build/
 
 # Node modules
 node_modules/

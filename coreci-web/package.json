@@ -1,6 +1,11 @@
 {
   "name": "coreci",
   "private": true,
+  "scripts": {
+    "start": "./node_modules/.bin/gulp",
+    "build": "./node_modules/.bin/gulp build --dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "devDependencies": {
     "browserify": "^9.0.4",
     "connect": "^3.3.5",
