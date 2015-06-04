@@ -1,7 +1,7 @@
 import sbt._
 import sbt.Keys._
 import xerial.sbt.Pack.{ pack => sbtPack, _ }
-import de.choffmeister.sbt.WebAppPlugin.{ webAppBuild => sbtWebAppBuild, _ }
+import de.choffmeister.sbt.WebAppPlugin.{ npmBuild => sbtNpmBuild, _ }
 import com.typesafe.sbt.{ GitVersioning => sbtGit }
 
 object Build extends sbt.Build {
@@ -64,12 +64,12 @@ object Build extends sbt.Build {
   lazy val root = (project in file("."))
     .settings(coordinateSettings: _*)
     .settings(name := "coreci")
-    .settings(dist <<= (streams, target, sbtPack in server, sbtWebAppBuild in web) map { (s, target, server, web) =>
+    .settings(dist <<= (streams, target, sbtPack in server, sbtNpmBuild in web) map { (s, target, server, web) =>
       val distDir = target / "dist"
       val distBinDir = distDir / "bin"
       val distWebDir = distDir / "web"
       IO.copyDirectory(server, distDir)
-      IO.copyDirectory(web, distWebDir)
+      IO.copyDirectory(web / "build", distWebDir)
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
       distDir
     })

@@ -21,10 +21,7 @@ var argv = require('yargs').argv,
 var config = {
   debug: !argv.dist,
   dist: argv.dist,
-  port: argv.port || 9000,
-  dest: function (p) {
-    return path.join(argv.target || './target', p || '');
-  }
+  port: argv.port || 9000
 };
 
 var onerror = function (err) {
@@ -41,7 +38,7 @@ gulp.task('html', function () {
   return gulp.src('./app/index.html')
     .pipe(gif(config.dist, minifyhtml()))
     .pipe(size({ showFiles: true, gzip: config.dist }))
-    .pipe(gulp.dest(config.dest()))
+    .pipe(gulp.dest('./build'))
     .pipe(livereload({ auto: false }));
 });
 
@@ -50,7 +47,7 @@ gulp.task('css', function () {
     .pipe(less({ compress: config.dist }))
     .on('error', onerror)
     .pipe(size({ showFiles: true, gzip: config.dist }))
-    .pipe(gulp.dest(config.dest('app')))
+    .pipe(gulp.dest('./build/app'))
     .pipe(livereload({ auto: false }));
 });
 
@@ -68,18 +65,18 @@ gulp.task('javascript', function () {
       .pipe(gif(config.dist, uglify({ preserveComments: 'some' })))
       .pipe(size({ showFiles: true, gzip: config.dist }))
       .pipe(gif(config.debug, sourcemaps.write('.')))
-      .pipe(gulp.dest(config.dest('app')))
+      .pipe(gulp.dest('./build/app'))
       .pipe(livereload({ auto: false }));
   }
 });
 
 gulp.task('assets-favicon', function () {
   return gulp.src('./app/favicon.ico')
-    .pipe(gulp.dest(config.dest()));
+    .pipe(gulp.dest('./build'));
 });
 gulp.task('assets-bootstrap-font', function () {
   return gulp.src('./node_modules/bootstrap/fonts/*.*')
-    .pipe(gulp.dest(config.dest('app/fonts')));
+    .pipe(gulp.dest('./build/app/fonts'));
 });
 gulp.task('assets', ['assets-favicon', 'assets-bootstrap-font']);
 
@@ -88,7 +85,7 @@ gulp.task('connect', ['build'], function (next) {
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
     .use(rewrite(['!(^/app/)|(^/favicon.ico$) /index.html [L]']))
-    .use(serveStatic(config.dest()))
+    .use(serveStatic('./build'))
     .listen(config.port, function () {
       gutil.log('Listening on http://localhost:' + config.port + '/');
       //next();

@@ -1,4 +1,8 @@
 machine:
+  java:
+    version: oraclejdk8
+  services:
+    - docker
   environment:
     DOCKER_HOST: tcp://localhost:2375
 
@@ -9,3 +13,12 @@ test:
     - docker pull busybox:latest
   post:
     - cp coreci-*/target/test-reports/* $CIRCLE_TEST_REPORTS
+
+deployment:
+  tarball:
+    branch:
+      - master
+      - develop
+    commands:
+      - sbt dist
+      - tar -C target/dist -cvf "$CIRCLE_ARTIFACTS/coreci.tar" .
