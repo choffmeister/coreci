@@ -2,12 +2,11 @@ package de.choffmeister.coreci
 
 import de.choffmeister.coreci.models._
 import org.specs2.mutable.Specification
-import org.specs2.time.NoTimeConversions
 import reactivemongo.bson.BSONObjectID
 
 import scala.concurrent.duration._
 
-class BuilderSpec extends Specification with NoTimeConversions {
+class BuilderSpec extends Specification {
   val timeout = 60.seconds
 
   "Builder" should {

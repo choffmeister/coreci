@@ -2,11 +2,10 @@ package de.choffmeister.coreci
 
 import akka.util.ByteString
 import org.specs2.mutable._
-import org.specs2.time.NoTimeConversions
 
 import scala.concurrent.duration._
 
-class DockerSpec extends Specification with NoTimeConversions {
+class DockerSpec extends Specification {
   val timeout = 60.seconds
 
   "Docker" should {

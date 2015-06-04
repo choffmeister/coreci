@@ -2,13 +2,12 @@ package de.choffmeister.coreci.models
 
 import de.choffmeister.coreci.TestDatabase
 import org.specs2.mutable.Specification
-import org.specs2.time.NoTimeConversions
 import reactivemongo.bson._
 
 import scala.concurrent._
 import scala.concurrent.duration._
 
-class DatabaseSpec extends Specification with NoTimeConversions{
+class DatabaseSpec extends Specification {
   "Database" should {
     entity("users", _.users, noPreparation) {
       case Left((_, i)) => User(username = s"username$i", email = s"username$i@domain.com")
