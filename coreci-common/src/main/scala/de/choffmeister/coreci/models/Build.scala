@@ -21,6 +21,7 @@ case class Build(
   image: String,
   script: String,
   environment: List[EnvironmentVariable] = Nil,
+  output: String = "",
   createdAt: BSONDateTime = BSONDateTime(0),
   updatedAt: BSONDateTime = BSONDateTime(0),
   projectCanonicalName: String = "") extends BaseModel
@@ -131,6 +132,7 @@ object BuildJSONFormat {
       image = doc.getAs[String]("image").get,
       script = doc.getAs[String]("script").get,
       environment = doc.getAs[List[EnvironmentVariable]]("environment").get,
+      output = doc.getAs[String]("output").get,
       createdAt = doc.getAs[BSONDateTime]("createdAt").get,
       updatedAt = doc.getAs[BSONDateTime]("updatedAt").get,
       projectCanonicalName = doc.getAs[String]("projectCanonicalName").get
@@ -146,6 +148,7 @@ object BuildJSONFormat {
       "image" -> obj.image,
       "script" -> obj.script,
       "environment" -> obj.environment,
+      "output" -> obj.output,
       "createdAt" -> obj.createdAt,
       "updatedAt" -> obj.updatedAt,
       "projectCanonicalName" -> obj.projectCanonicalName

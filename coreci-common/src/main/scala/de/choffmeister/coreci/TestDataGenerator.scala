@@ -16,7 +16,6 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
       users <- seq((1 to 2).map(i => um.createUser(user(i), s"pass$i")))
       projects <- seq((1 to 2).map(i => db.projects.insert(project(users.head, i))))
       builds <- seq((1 to 2).map(i => db.builds.insert(build(projects.head, i))))
-      outputs <- seq(builds.flatMap(b => (1 to 2).map(i => db.outputs.insert(output(b, i)))))
     } yield ()
   }
 
@@ -41,12 +40,8 @@ class TestDataGenerator(conf: Config, db: Database) extends Logger {
     status = Succeeded(now, now),
     image = project.image,
     script = project.script,
-    environment = project.environment)
-
-  private def output(build: Build, i: Int) = Output(
-    buildId = build.id,
-    index = i,
-    content = s"Output line $i of build ${build.number}\n")
+    environment = project.environment,
+    output = s"Test output\nNumber $i\n")
 
   private def now = BSONDateTime(System.currentTimeMillis)
   private def seq[T](fs: Seq[Future[T]])(implicit ec: ExecutionContext) = Future.sequence(fs)

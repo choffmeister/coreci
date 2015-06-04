@@ -53,12 +53,11 @@ class Database(val mongoDbDatabase: DefaultDB, collectionNamePrefix: String = ""
   lazy val userPasswords = new UserPasswordTable(this, mongoDbDatabase(collectionNamePrefix + "userPasswords"))
   lazy val projects = new ProjectTable(this, mongoDbDatabase(collectionNamePrefix + "projects"))
   lazy val builds = new BuildTable(this, mongoDbDatabase(collectionNamePrefix + "builds"))
-  lazy val outputs = new OutputTable(this, mongoDbDatabase(collectionNamePrefix + "outputs"))
 
   def configure(): Future[Unit] = Future.sequence(tables.map(_.configure())).map(_ => ())
   def clear(): Future[Unit] = Future.sequence(tables.map(_.clear())).map(_ => ())
 
-  private lazy val tables = Seq(users, userPasswords, projects, builds, outputs)
+  private lazy val tables = Seq(users, userPasswords, projects, builds)
 }
 
 object Database {

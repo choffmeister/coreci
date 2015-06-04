@@ -20,13 +20,8 @@ class DatabaseSpec extends Specification {
     }
 
     entity("builds", _.builds, withProject) {
-      case Left((project, i)) => Build(projectId = project.id, status = Pending, image = "busybox:latest", script = "#!/bin/sh -e\n\nuname -a\n")
+      case Left((project, i)) => Build(projectId = project.id, status = Pending, image = "busybox:latest", script = "#!/bin/sh -e\n\nuname -a\n", output = "output")
       case Right(b) => b.copy(status = Running(BSONDateTime(0)))
-    }
-
-    entity("outputs", _.outputs, noPreparation) {
-      case Left((_, i)) => Output(buildId = BSONObjectID.generate, index = i, content = s"line$i")
-      case Right(o) => o.copy(content = o.content + "-modified")
     }
   }
 

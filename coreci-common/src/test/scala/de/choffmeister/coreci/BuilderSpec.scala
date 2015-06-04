@@ -23,10 +23,9 @@ class BuilderSpec extends Specification {
           script = "#!/bin/sh -e\n\nuname -a\n")))
         val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
         val finished = await(builder.run(pending))
-        val outputs = await(db.outputs.all)
 
         finished.status must beAnInstanceOf[Succeeded]
-        outputs.map(_.content).mkString must contain("GNU/Linux")
+        finished.output must contain("GNU/Linux")
       })
     }
 
@@ -85,12 +84,11 @@ class BuilderSpec extends Specification {
           script = "#!/bin/sh -e\n\necho \"print(PUBLIC)=$PUBLIC\"\necho \"print(WRAPPED)=$WRAPPED\"\n")))
         val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script, environment = project.environment)))
         val finished = await(builder.run(pending))
-        val outputs = await(db.outputs.all).map(_.content).mkString
 
         finished.status must beAnInstanceOf[Succeeded]
-        outputs must contain("print(PUBLIC)=public")
-        outputs must contain("print(WRAPPED)=\"wrapped\"")
-        outputs must not contain("secret")
+        finished.output must contain("print(PUBLIC)=public")
+        finished.output must contain("print(WRAPPED)=\"wrapped\"")
+        finished.output must not contain("secret")
       })
     }
   }

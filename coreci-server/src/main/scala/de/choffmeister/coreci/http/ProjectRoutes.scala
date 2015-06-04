@@ -67,11 +67,7 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
                   path("output") {
                     get {
                       pageable { page =>
-                        complete {
-                          database.outputs.findByBuild(build.id)
-                            .map(_.foldLeft("")(_ + _.content))
-                            .map(_.drop(page._1.getOrElse(0)).take(page._2.getOrElse(Int.MaxValue)))
-                        }
+                        complete(build.output.slice(page._1.getOrElse(0), page._1.getOrElse(0) + page._2.getOrElse(Int.MaxValue)))
                       }
                     }
                   }
