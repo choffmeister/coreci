@@ -3,6 +3,7 @@ import sbt.Keys._
 import xerial.sbt.Pack.{ pack => sbtPack, _ }
 import de.choffmeister.sbt.WebAppPlugin.{ npmBuild => sbtNpmBuild, _ }
 import com.typesafe.sbt.{ GitVersioning => sbtGit }
+import com.typesafe.sbt.SbtGit.git
 
 object Build extends sbt.Build {
   lazy val dist = TaskKey[File]("dist", "Builds the distribution packages")
@@ -74,5 +75,6 @@ object Build extends sbt.Build {
       distDir
     })
     .enablePlugins(sbtGit)
+    .settings(git.formattedShaVersion := git.gitHeadCommit.value map(sha => s"${sha.take(7)}-SNAPSHOT"))
     .aggregate(common, server, web)
 }
