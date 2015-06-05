@@ -72,6 +72,7 @@ object Build extends sbt.Build {
       val distDir = target / "dist"
       val distBinDir = distDir / "bin"
       val distWebDir = distDir / "web"
+      IO.delete(distDir)
       IO.copyDirectory(server, distDir)
       IO.copyDirectory(web / "build", distWebDir)
       distBinDir.listFiles.foreach(_.setExecutable(true, false))
