@@ -142,7 +142,7 @@ class Docker(host: String, port: Int)
           deliver()
         }
       }
-    })).mapMaterialized(_ => promise.future)
+    })).mapMaterializedValue(_ => promise.future)
   }
 
   def buildImage(tar: Source[ByteString, Unit], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {

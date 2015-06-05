@@ -2,7 +2,7 @@ package de.choffmeister.coreci.http
 
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directive1
-import akka.http.scaladsl.server.directives.AuthenticationDirectives._
+import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.server.directives.RouteDirectives._
 import de.choffmeister.auth.common.JsonWebToken
 import de.choffmeister.auth.common.JsonWebToken._
@@ -14,7 +14,7 @@ class Authenticator[U](
     bearerTokenSecret: Array[Byte],
     findUserById: String => Future[Option[U]],
     findUserByUserName: String => Future[Option[U]],
-    validatePassword: (U, String) => Future[Boolean])(implicit executor: ExecutionContext) {
+    validatePassword: (U, String) => Future[Boolean])(implicit executor: ExecutionContext) extends SecurityDirectives {
   def apply(): Directive1[U] = {
     bearerToken(acceptExpired = false).recover { rejs =>
       basic().recover(rejs2 => reject(rejs ++ rejs2: _*))
