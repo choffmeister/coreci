@@ -26,7 +26,7 @@ case class Build(
   updatedAt: BSONDateTime = BSONDateTime(0),
   projectCanonicalName: String = "") extends BaseModel
 {
-  def defused: Build = this.copy(environment = this.environment.map(_.defused))
+  def defused: Build = this.copy(environment = this.environment.map(_.defused), output = "")
 }
 
 class BuildTable(database: Database, collection: BSONCollection)(implicit executor: ExecutionContext) extends Table[Build](database, collection) {

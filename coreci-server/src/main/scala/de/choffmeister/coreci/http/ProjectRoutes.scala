@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.stream.FlowMaterializer
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.models._
-import spray.json._
 
 import scala.concurrent.ExecutionContext
 
@@ -64,11 +63,22 @@ class ProjectRoutes(val database: Database, workerHandler: ActorRef)
                       complete(build.defused)
                     }
                   } ~
-                  path("output") {
-                    get {
-                      pageable { page =>
-                        complete(build.output.slice(page._1.getOrElse(0), page._1.getOrElse(0) + page._2.getOrElse(Int.MaxValue)))
+                  pathPrefix("output") {
+                    pathEnd {
+                      get {
+                        pageable { page =>
+                          complete(build.output.slice(page._1.getOrElse(0), page._1.getOrElse(0) + page._2.getOrElse(Int.MaxValue)))
+                        }
                       }
+                    } ~
+                    path("ws") {
+                      import akka.http.scaladsl.model.ws._
+                      import akka.stream.scaladsl.Flow
+                      handleWebsocketMessages(Flow[Message].mapConcat {
+                        case x =>
+                          println(x)
+                          x :: x :: x :: x :: Nil
+                      })
                     }
                   }
                 case None =>
