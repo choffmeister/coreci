@@ -1,0 +1,24 @@
+machine:
+  java:
+    version: oraclejdk8
+  services:
+    - docker
+  environment:
+    DOCKER_HOST: tcp://localhost:2375
+
+test:
+  pre:
+    - echo "DOCKER_OPTS=\"-s btrfs -e lxc -H=tcp://127.0.0.1:2375\"" | sudo tee --append /etc/default/docker
+    - sudo service docker restart
+    - docker pull busybox:latest
+  post:
+    - cp coreci-*/target/test-reports/* $CIRCLE_TEST_REPORTS
+
+deployment:
+  tarball:
+    branch:
+      - master
+      - develop
+    commands:
+      - sbt dist
+      - tar -C target/dist -cvf "$CIRCLE_ARTIFACTS/coreci.tar" .

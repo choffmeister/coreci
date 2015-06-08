@@ -2,13 +2,16 @@ package de.choffmeister.coreci
 
 import de.choffmeister.coreci.models._
 import org.specs2.mutable.Specification
-import org.specs2.time.NoTimeConversions
 import reactivemongo.bson.BSONObjectID
 
-class BuilderSpec extends Specification with NoTimeConversions {
+import scala.concurrent.duration._
+
+class BuilderSpec extends Specification {
+  val timeout = 60.seconds
+
   "Builder" should {
     "runs successful builds" in new TestActorSystem {
-      TestDatabase(prefill = false) { db =>
+      within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
@@ -24,11 +27,11 @@ class BuilderSpec extends Specification with NoTimeConversions {
 
         finished.status must beAnInstanceOf[Succeeded]
         outputs.map(_.content).mkString must contain("GNU/Linux")
-      }
+      })
     }
 
     "runs failing builds" in new TestActorSystem {
-      TestDatabase(prefill = false) { db =>
+      within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
@@ -43,11 +46,11 @@ class BuilderSpec extends Specification with NoTimeConversions {
 
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("Exit code 1")
-      }
+      })
     }
 
     "runs erroring builds" in new TestActorSystem {
-      TestDatabase(prefill = false) { db =>
+      within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
@@ -62,11 +65,11 @@ class BuilderSpec extends Specification with NoTimeConversions {
 
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("No such image")
-      }
+      })
     }
 
     "inject environment into builds" in new TestActorSystem {
-      TestDatabase(prefill = false) { db =>
+      within(timeout)(TestDatabase(prefill = false) { db =>
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
@@ -88,7 +91,7 @@ class BuilderSpec extends Specification with NoTimeConversions {
         outputs must contain("print(PUBLIC)=public")
         outputs must contain("print(WRAPPED)=\"wrapped\"")
         outputs must not contain("secret")
-      }
+      })
     }
   }
 }

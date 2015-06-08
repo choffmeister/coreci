@@ -61,7 +61,7 @@ class AuthRoutesSpec extends Specification with Specs2RouteTest {
       }
     }
 
-    "GET /auth/token/create"  in new TestActorSystem {
+    "GET /auth/token/create" in new TestActorSystem {
       TestDatabase(prefill = true) { db =>
         val routes = new ApiRoutes(db, self, Map.empty).routes
         val users = await(db.users.all)
@@ -80,7 +80,7 @@ class AuthRoutesSpec extends Specification with Specs2RouteTest {
       }
     }
 
-    "GET /auth/token/renew"  in new TestActorSystem {
+    "GET /auth/token/renew" in new TestActorSystem {
       TestDatabase(prefill = true) { db =>
         val routes = new ApiRoutes(db, self, Map.empty).routes
         val config = ServerConfig.load()
