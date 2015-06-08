@@ -33,7 +33,7 @@ class DockerSpec extends Specification {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val future = docker.ping()
 
-        await(future).toMillis.toInt must beLessThan(5000)
+        await(future).toMillis.toInt must beLessThan(timeout.toMillis.toInt)
       }
     }
 
@@ -45,7 +45,7 @@ class DockerSpec extends Specification {
           .run("echo hello world")
 
         val future = for {
-          build <- docker.buildImage(Dockerfile.createTarBall(dockerfile), forceRemove = true, noCache = true)
+          build <- docker.buildImage(Right(Dockerfile.createTarBall(dockerfile)), forceRemove = true, noCache = true)
           result <- build.stream.runFold(("", 0)) {
             case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
             case (acc, o: DockerBuildOutput) => (acc._1 + o.message, acc._2)
@@ -64,7 +64,7 @@ class DockerSpec extends Specification {
           .run("unknown command")
 
         val future = for {
-          build <- docker.buildImage(Dockerfile.createTarBall(dockerfile), forceRemove = true, noCache = true)
+          build <- docker.buildImage(Right(Dockerfile.createTarBall(dockerfile)), forceRemove = true, noCache = true)
           result <- build.stream.runFold(("", 0)) {
             case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
             case (acc, o: DockerBuildOutput) => (acc._1 + o.message, acc._2)
@@ -85,7 +85,7 @@ class DockerSpec extends Specification {
         val context = Map("test.sh" -> ByteString("#!/bin/sh -e\n\necho hello\necho world\necho !!!"))
 
         val future = for {
-          build <- docker.buildImage(Dockerfile.createTarBall(dockerfile, context), forceRemove = true, noCache = true)
+          build <- docker.buildImage(Right(Dockerfile.createTarBall(dockerfile, context)), forceRemove = true, noCache = true)
           result <- build.stream.runFold(("", 0)) {
             case (acc, DockerBuildError(msg)) => (acc._1 + msg, acc._2 + 1)
             case (acc, o: DockerBuildOutput) => (acc._1 + o.message, acc._2)

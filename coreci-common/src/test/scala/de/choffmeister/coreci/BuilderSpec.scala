@@ -22,7 +22,7 @@ class BuilderSpec extends Specification {
           image = "busybox:latest",
           script = "#!/bin/sh -e\n\nuname -a\n")))
         val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
-        val finished = await(builder.run(pending))
+        val finished = await(builder.runScript(pending, pending.script))
         val outputs = await(db.outputs.all)
 
         finished.status must beAnInstanceOf[Succeeded]
@@ -42,7 +42,7 @@ class BuilderSpec extends Specification {
           image = "busybox:latest",
           script = "#!/bin/sh -e\n\nexit 1")))
         val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
-        val finished = await(builder.run(pending))
+        val finished = await(builder.runScript(pending, pending.script))
 
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("Exit code 1")
@@ -61,7 +61,7 @@ class BuilderSpec extends Specification {
           image = "unknownimage",
           script = "#!/bin/sh -e\n\nuname -a\n")))
         val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script)))
-        val finished = await(builder.run(pending))
+        val finished = await(builder.runScript(pending, pending.script))
 
         finished.status must beAnInstanceOf[Failed]
         finished.status.asInstanceOf[Failed].errorMessage must contain("No such image")
@@ -84,7 +84,7 @@ class BuilderSpec extends Specification {
             EnvironmentVariable("SECRET", "secret", secret = true) :: Nil,
           script = "#!/bin/sh -e\n\necho \"print(PUBLIC)=$PUBLIC\"\necho \"print(WRAPPED)=$WRAPPED\"\n")))
         val pending = await(db.builds.insert(Build(projectId = project.id, image = project.image, script = project.script, environment = project.environment)))
-        val finished = await(builder.run(pending))
+        val finished = await(builder.runScript(pending, pending.script))
         val outputs = await(db.outputs.all).map(_.content).mkString
 
         finished.status must beAnInstanceOf[Succeeded]

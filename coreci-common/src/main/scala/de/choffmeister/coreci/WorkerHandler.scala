@@ -95,7 +95,7 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
               addBuild(name, build)
               val docker = Docker.open(url)
               val builder = new Builder(database, docker)
-              builder.run(build).foreach { finished =>
+              builder.runScript(build, build.script).foreach { finished =>
                 removeBuild(name, build.id)
                 self ! DispatchBuild
               }

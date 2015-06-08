@@ -1,6 +1,7 @@
 package de.choffmeister.coreci
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.Uri
 import akka.stream.FlowMaterializer
 import akka.stream.scaladsl._
 import akka.stream.stage.{SyncDirective, Context, PushPullStage}
@@ -15,11 +16,9 @@ class Builder(db: Database, docker: Docker)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
   val config = Config.load()
 
-  def run(pending: Build): Future[Build] = {
+  def run(pending: Build, context: Either[Uri, Source[ByteString, Unit]]): Future[Build] = {
     log.info(s"Running build ${pending.id} on image ${pending.image}")
     val startedAt = now
-    val dockerfile = Dockerfile.from(pending.image).add(".", "/coreci").run("chmod +x /coreci/build")
-    val context = Dockerfile.createTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
 
     def prepareOutputFlow(startIndex: Long) = Flow[DockerBuildOutput]
       .map {
@@ -65,6 +64,12 @@ class Builder(db: Database, docker: Docker)
         val message = Option(err.getMessage).getOrElse("Unknown error")
         db.builds.update(pending.copy(status = Failed(startedAt, now, message)))
       }
+  }
+
+  def runScript(pending: Build, script: String): Future[Build] = {
+    val dockerfile = Dockerfile.from(pending.image).add(".", "/coreci").run("chmod +x /coreci/build")
+    val context = Dockerfile.createTarBall(dockerfile, Map("build" -> ByteString(pending.script)))
+    run(pending, Right(context))
   }
 
   private def now = BSONDateTime(System.currentTimeMillis)

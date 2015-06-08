@@ -70,11 +70,19 @@ class Docker(host: String, port: Int)
     }
   }
 
-  def buildImage[T](tar: Source[ByteString, Unit], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
+  def buildImage[T](context: Either[Uri, Source[ByteString, Unit]], name: Option[String] = None, pull: Boolean = false, forceRemove: Boolean = false, noCache: Boolean = false): Future[DockerBuild] = {
     log.info(s"Building image")
     val nameOrRandom = name.getOrElse(java.util.UUID.randomUUID().toString)
-    val uri = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=1&nocache=$noCache")
-    val entity = HttpEntity.Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tar)
+    val (uri, entity) = context match {
+      case Right(tarBall) =>
+        val u = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=1&nocache=$noCache")
+        val e = HttpEntity.Chunked.fromData(ContentType(MediaTypes.`application/x-tar`), tarBall)
+        (u, e)
+      case Left(tarUri) =>
+        val u = Uri(s"/build?t=$nameOrRandom&pull=$pull&forcerm=1&nocache=$noCache&remote=${tarUri}")
+        val e = HttpEntity.empty(MediaTypes.`application/octet-stream`)
+        (u, e)
+    }
 
     val toBuildOutputStream = Flow[ByteString]
       .mapConcat { s =>
