@@ -12,7 +12,7 @@ class BuilderSpec extends Specification {
   "Builder" should {
     "runs successful builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,
@@ -32,7 +32,7 @@ class BuilderSpec extends Specification {
 
     "runs failing builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,
@@ -51,7 +51,7 @@ class BuilderSpec extends Specification {
 
     "runs erroring builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,
@@ -70,7 +70,7 @@ class BuilderSpec extends Specification {
 
     "inject environment into builds" in new TestActorSystem {
       within(timeout)(TestDatabase(prefill = false) { db =>
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val builder = new Builder(db, docker)
         val project = await(db.projects.insert(Project(
           userId = BSONObjectID.generate,

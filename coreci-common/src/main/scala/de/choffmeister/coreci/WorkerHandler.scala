@@ -21,6 +21,7 @@ object WorkerHandlerProtocol {
 case class Worker(
   name: String,
   url: String,
+  tls: Boolean,
   concurrency: Int,
   builds: List[Build],
   locked: Boolean,
@@ -33,7 +34,7 @@ case object IdleState extends WorkerState
 case object DispatchingState extends WorkerState
 case class RunningState(build: Build) extends WorkerState
 
-class WorkerHandler(database: Database, workerMap: Map[String, String])
+class WorkerHandler(database: Database, workerMap: Map[String, (String, Boolean)])
     (implicit executor: ExecutionContext, materializer: FlowMaterializer) extends Actor with ActorLogging {
   import WorkerHandlerProtocol._
   implicit val system = context.system
@@ -42,13 +43,13 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
   context.system.scheduler.schedule(0.second, 15.second, self, UpdatePing)
   context.system.scheduler.schedule(0.second, 5.second, self, DispatchBuild)
 
-  val workers = MutableMap(workerMap.map(w => w._1 -> Worker(w._1, w._2, 2, Nil, locked = false, None, None, Vector.empty)).toSeq: _*)
+  val workers = MutableMap(workerMap.map(w => w._1 -> Worker(w._1, w._2._1, w._2._2, 2, Nil, locked = false, None, None, Vector.empty)).toSeq: _*)
 
   def receive = {
     case UpdateVersionAndInfo =>
-      workers.foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
+      workers.foreach { case (name, Worker(_, url, tls, _, _, _, _, _, _)) =>
         log.debug(s"Fetching worker $name info")
-        val docker = Docker.open(url)
+        val docker = Docker.open(url, tls)
         val f = for {
           version <- docker.version()
           info <- docker.info()
@@ -67,8 +68,8 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
       }
 
     case UpdatePing =>
-      workers.foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
-        val docker = Docker.open(url)
+      workers.foreach { case (name, Worker(_, url, tls, _, _, _, _, _, _)) =>
+        val docker = Docker.open(url, tls)
         docker.ping()
           .map(Some.apply)
           .recover { case _ => None }
@@ -82,7 +83,7 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
     case DispatchBuild =>
       val available = workers.filter(w => w._2.dockerHostInfo.isDefined && w._2.builds.length < w._2.concurrency && !w._2.locked)
 
-      random(available).foreach { case (name, Worker(_, url, _, _, _, _, _, _)) =>
+      random(available).foreach { case (name, Worker(_, url, tls, _, _, _, _, _, _)) =>
         lock(name)
         database.builds.getPending()
           .recover { case err =>
@@ -93,7 +94,7 @@ class WorkerHandler(database: Database, workerMap: Map[String, String])
             case Some(build) =>
               log.debug(s"Dispatching build ${build.projectCanonicalName}#${build.number} (${build.id.stringify}) to worker $name")
               addBuild(name, build)
-              val docker = Docker.open(url)
+              val docker = Docker.open(url, tls)
               val builder = new Builder(database, docker)
               builder.run(build).foreach { finished =>
                 removeBuild(name, build.id)

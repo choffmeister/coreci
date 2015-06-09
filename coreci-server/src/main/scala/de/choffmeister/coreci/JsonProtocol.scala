@@ -92,5 +92,5 @@ trait JsonProtocol extends DefaultJsonProtocol
   implicit val outputFormat = jsonFormat5(Output)
   implicit val dockerVersionFormat = jsonFormat4(DockerVersion)
   implicit val dockerHostInfoFormat = jsonFormat5(DockerHostInfo)
-  implicit val workerFormat = jsonFormat8(Worker)
+  implicit val workerFormat = jsonFormat9(Worker)
 }

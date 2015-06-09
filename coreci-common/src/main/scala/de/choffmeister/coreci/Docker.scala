@@ -48,18 +48,21 @@ case class DockerRun(containerId: String, stream: Source[ByteString, Any])
  *
  * @param host The host
  * @param port The port
+ * @param tls TLS encryption
  * @param system The actor system
  * @param executor The execution context
  * @param materializer The flow materializer
  */
-class Docker(host: String, port: Int)
+class Docker(host: String, port: Int, tls: Boolean)
     (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
+  private val scheme = if (tls) "https" else "http"
+
   def version(): Future[DockerVersion] = {
-    jsonRequest(GET, Uri("/version")).map(_.get.asJsObject).map(DockerJsonProtocol.readVersion)
+    jsonRequest(GET, Uri("/version")).map(_._2.right.get.asJsObject).map(DockerJsonProtocol.readVersion)
   }
 
   def info(): Future[DockerHostInfo] = {
-    jsonRequest(GET, Uri("/info")).map(_.get.asJsObject).map(DockerJsonProtocol.readHostInfo)
+    jsonRequest(GET, Uri("/info")).map(_._2.right.get.asJsObject).map(DockerJsonProtocol.readHostInfo)
   }
 
   def ping(): Future[FiniteDuration] = {
@@ -138,7 +141,7 @@ class Docker(host: String, port: Int)
       "Env" -> JsArray(environment.map(ev => ev._1 + "=" + ev._2).map(JsString.apply).toVector)
     )
     jsonRequest(POST, Uri("/containers/create"), Some(payload))
-      .map(_.get.asJsObject)
+      .map(_._2.right.get.asJsObject)
       .map { json =>
         val id = json.fields("Id").asInstanceOf[JsString].value
         log.info(s"Created container $id from $name")
@@ -153,7 +156,7 @@ class Docker(host: String, port: Int)
 
   def inspectContainer(id: String): Future[DockerContainerInspection] = {
     log.debug(s"Inspecting container $id")
-    jsonRequest(GET, Uri(s"/containers/$id/json")).map(_.get.asJsObject).map(DockerJsonProtocol.readContainerInspection)
+    jsonRequest(GET, Uri(s"/containers/$id/json")).map(_._2.right.get.asJsObject).map(DockerJsonProtocol.readContainerInspection)
   }
 
   def startContainer(id: String): Future[Unit] = {
@@ -166,45 +169,25 @@ class Docker(host: String, port: Int)
     rawRequest(POST, Uri(s"/containers/$id/attach?logs=true&stream=true&stdout=true&stderr=true")).map(_.entity.dataBytes)
   }
 
-  private def rawRequest(
-      method: HttpMethod,
-      uri: Uri,
-      entity: RequestEntity = HttpEntity.Empty): Future[HttpResponse] = {
-    Source.single(HttpRequest(method, uri, entity = entity)).via(Http().outgoingConnection(host, port)).runWith(Sink.head)
+  private def rawRequest(method: HttpMethod, uri: Uri, entity: RequestEntity = HttpEntity.Empty): Future[HttpResponse] = {
+    HttpClient.request(method, uri.withAuthority(host, port).withScheme(scheme), entity)
   }
 
-  private def jsonRequest(
-      method: HttpMethod,
-      uri: Uri,
-      payload: Option[JsObject] = None,
-      errorMap: PartialFunction[HttpResponse, Exception] = PartialFunction.empty): Future[Option[JsValue]] = {
-    val entity = payload.map(p => HttpEntity(p.toString())).getOrElse(HttpEntity.Empty).withContentType(ContentTypes.`application/json`)
-
-    Source.single(HttpRequest(method, uri, entity = entity)).via(Http().outgoingConnection(host, port))
-      .runWith(Sink.head)
+  private def jsonRequest(method: HttpMethod, uri: Uri, payload: Option[JsObject] = None): Future[(HttpResponse, Either[String, JsValue])] = {
+    HttpClient.jsonRequest(method, uri.withAuthority(host, port).withScheme(scheme), payload)
       .flatMap {
-        case res if res.status.isSuccess() =>
-          res.entity.toStrict(3.second).map {
-            case body if body.data == ByteString("OK") => Some(JsString("OK"))
-            case body if body.data.length > 0 => Some(JsonParser(ParserInput(body.data.utf8String)))
-            case _ => None
-          }
-        case res =>
-          res.toStrict(3.second).flatMap { res =>
-            if (errorMap.isDefinedAt(res))
-              Future.failed(errorMap(res))
-            else
-              res.entity.toStrict(3.second).flatMap(body => Future.failed(new Exception(body.data.utf8String)))
-          }
+        case (res, value) if res.status.isSuccess() => Future((res, value))
+        case (res, Right(json)) => Future.failed(new Exception(json.toString()))
+        case (res, Left(str)) => Future.failed(new Exception(str))
       }
   }
 }
 
 object Docker {
-  def open(uri: String)
+  def open(uri: String, tls: Boolean)
       (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer): Docker = {
     val (host, port) = parseUri(uri)
-    new Docker(host, port)
+    new Docker(host, port, tls)
   }
 
   private def parseUri(uri: String): (String, Int) = Uri(uri) match {

@@ -11,7 +11,7 @@ class DockerSpec extends Specification {
   "Docker" should {
     "retrieve host version" in new TestActorSystem {
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val future = docker.version()
 
         await(future).version must startWith("1.")
@@ -20,7 +20,7 @@ class DockerSpec extends Specification {
 
     "retrieve host infos" in new TestActorSystem {
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val future = docker.info()
 
         await(future)
@@ -30,7 +30,7 @@ class DockerSpec extends Specification {
 
     "ping host" in new TestActorSystem {
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val future = docker.ping()
 
         await(future).toMillis.toInt must beLessThan(timeout.toMillis.toInt)
@@ -39,7 +39,7 @@ class DockerSpec extends Specification {
 
     "build images" in new TestActorSystem {
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val dockerfile = Dockerfile.from("busybox:latest")
           .run("uname -a")
           .run("echo hello world")
@@ -58,7 +58,7 @@ class DockerSpec extends Specification {
       }
 
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val dockerfile = Dockerfile.from("busybox:latest")
           .run("uname -a")
           .run("unknown command")
@@ -78,7 +78,7 @@ class DockerSpec extends Specification {
 
     "build images with context" in new TestActorSystem {
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val dockerfile = Dockerfile.from("busybox:latest")
           .add(".", "/context")
           .run("sh /context/test.sh")
@@ -101,7 +101,7 @@ class DockerSpec extends Specification {
 
     "run images" in new TestActorSystem {
       within(timeout) {
-        val docker = Docker.open(Config.load().dockerWorkers.head._2)
+        val docker = Docker.open(Config.load().dockerWorkers.head._2._1, Config.load().dockerWorkers.head._2._2)
         val command = "uname" :: "-a" :: Nil
         val future  = for {
           run <- docker.runImage("busybox:latest", command, Map.empty)
