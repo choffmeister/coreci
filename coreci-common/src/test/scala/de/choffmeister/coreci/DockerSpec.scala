@@ -33,7 +33,7 @@ class DockerSpec extends Specification {
         val docker = Docker.open(Config.load().dockerWorkers.head._2)
         val future = docker.ping()
 
-        await(future).toMillis.toInt must beLessThan(5000)
+        await(future).toMillis.toInt must beLessThan(timeout.toMillis.toInt)
       }
     }
 
