@@ -5,8 +5,10 @@ var React = require('react'),
     TabPane = require('react-bootstrap').TabPane,
     DateTime = require('../components/DateTime.jsx'),
     Console = require('../components/Console.jsx'),
-    HttpClient = require('../services/HttpClient').Raw(),
-    JsonClient = require('../services/HttpClient').Json();
+    HttpClient = require('../services/HttpClient');
+
+var httpClient = new HttpClient.Raw(),
+    jsonClient = new HttpClient.Json();
 
 var BuildsShow = React.createClass({
   contextTypes: {
@@ -16,7 +18,7 @@ var BuildsShow = React.createClass({
   statics: {
     fetchData: function (params) {
       return {
-        build: JsonClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber)
+        build: jsonClient.get('/api/projects/' + params.projectCanonicalName + '/builds/' + params.buildNumber)
       };
     }
   },
@@ -76,7 +78,7 @@ var BuildsShow = React.createClass({
   },
 
   rerun: function () {
-    JsonClient.post('/api/builds/' + this.state.build.id + '/rerun').then(build => {
+    jsonClient.post('/api/builds/' + this.state.build.id + '/rerun').then(build => {
       this.context.router.transitionTo('builds-show', {
         projectCanonicalName: build.projectCanonicalName,
         buildNumber: build.number
@@ -85,7 +87,7 @@ var BuildsShow = React.createClass({
   },
 
   render: function () {
-    var message = this.state.build.status.type == 'failed' ?
+    var message = this.state.build.status.type === 'failed' ?
       this.state.build.status.errorMessage : '-';
 
     var duration = this.state.build.status.finishedAt && this.state.build.status.startedAt ?
@@ -143,11 +145,11 @@ var BuildsShow = React.createClass({
   },
 
   update: function (projectCanonicalName, buildNumber, skip) {
-    var build = JsonClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
-    var output = HttpClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + skip, true);
+    var buildPromise = jsonClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber);
+    var outputPromise = httpClient.get('/api/projects/' + projectCanonicalName + '/builds/' + buildNumber + '/output?skip=' + skip, true);
 
-    Bluebird.join(build, output, (build, output) => {
-      if (this.props.data.build.projectCanonicalName == projectCanonicalName && this.props.data.build.number == buildNumber) {
+    Bluebird.join(buildPromise, outputPromise, (build, output) => {
+      if (this.props.data.build.projectCanonicalName === projectCanonicalName && this.props.data.build.number === buildNumber) {
         this.setState({
           build: build,
           output: this.state.output + output

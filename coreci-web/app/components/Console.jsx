@@ -10,10 +10,10 @@ var convertColorsAnsiToHtml = function (raw) {
   var fgColor = null;
   var bgColor = null;
 
-  var inner = raw.replace(regex, function (csi, a, b, c, d) {
-    if (a == '\u001b\[' && c == 'm') {
+  var inner = raw.replace(regex, function (csi, a, b, c) {
+    if (a === '\u001b\[' && c === 'm') {
       b.split(';').map(n => parseInt(n, 10)).forEach(number => {
-        if (number == 0) {
+        if (number === 0) {
           fgColor = null;
           bgColor = null;
         } else if (number >= 30 && number < 38) {
@@ -28,9 +28,13 @@ var convertColorsAnsiToHtml = function (raw) {
       });
 
       var classes = [];
-      if (fgColor) classes.push('fg-' + fgColor);
-      if (bgColor) classes.push('bg-' + bgColor);
-      classes = classes.filter(c => c).map(c => 'console-output-' + c).join(' ');
+      if (fgColor) {
+        classes.push('fg-' + fgColor);
+      }
+      if (bgColor) {
+        classes.push('bg-' + bgColor);
+      }
+      classes = classes.filter(cl => Boolean(cl)).map(cl => 'console-output-' + cl).join(' ');
 
       return '</span><span class="' + classes + '">';
     } else {

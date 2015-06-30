@@ -1,13 +1,14 @@
 var React = require('react'),
     Link = require('react-router').Link,
-    DateTime = require('../components/DateTime.jsx'),
-    JsonClient = require('../services/HttpClient').Json();
+    HttpClient = require('../services/HttpClient');
+
+var jsonClient = new HttpClient.Json();
 
 var ProjectsList = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        projects: JsonClient.get('/api/projects')
+        projects: jsonClient.get('/api/projects')
       };
     }
   },

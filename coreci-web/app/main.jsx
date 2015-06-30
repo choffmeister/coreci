@@ -1,7 +1,5 @@
 var React = require('react'),
     ReactRouter = require('react-router'),
-    Route = ReactRouter.Route,
-    Redirect = ReactRouter.Redirect,
     Bluebird = require('bluebird'),
     extend = require('extend');
 
@@ -14,19 +12,19 @@ var App = require('./components/App.jsx'),
     WorkersList = require('./views/WorkersList.jsx');
 
 var routes = (
-  <Route name="app" handler={App} path="/">
-    <Route name="projects-list" handler={ProjectsList} path="/projects"/>
-    <Route name="projects-show" handler={ProjectsShow} path="/projects/:projectCanonicalName"/>
-    <Route name="projects-create" handler={ProjectsCreate} path="/create"/>
-    <Route name="builds-list" handler={BuildsList} path="/builds"/>
-    <Route name="builds-show" handler={BuildsShow} path="/projects/:projectCanonicalName/builds/:buildNumber"/>
-    <Route name="workers-list" handler={WorkersList} path="/workers"/>
-    <Redirect from="" to="builds-list" />
-  </Route>
+  <ReactRouter.Route name="app" handler={App} path="/">
+    <ReactRouter.Route name="projects-list" handler={ProjectsList} path="/projects"/>
+    <ReactRouter.Route name="projects-show" handler={ProjectsShow} path="/projects/:projectCanonicalName"/>
+    <ReactRouter.Route name="projects-create" handler={ProjectsCreate} path="/create"/>
+    <ReactRouter.Route name="builds-list" handler={BuildsList} path="/builds"/>
+    <ReactRouter.Route name="builds-show" handler={BuildsShow} path="/projects/:projectCanonicalName/builds/:buildNumber"/>
+    <ReactRouter.Route name="workers-list" handler={WorkersList} path="/workers"/>
+    <ReactRouter.Redirect from="" to="builds-list" />
+  </ReactRouter.Route>
 );
 
-var fetchData = function (routes, params) {
-  var fetches = routes
+var fetchData = function (usedRoutes, params) {
+  var fetches = usedRoutes
     .filter(r => r.handler.fetchData)
     .map(r => Bluebird.props(r.handler.fetchData(params)));
 

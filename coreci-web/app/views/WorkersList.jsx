@@ -1,11 +1,13 @@
 var React = require('react'),
-    JsonClient = require('../services/HttpClient').Json();
+    HttpClient = require('../services/HttpClient');
+
+var jsonClient = new HttpClient.Json();
 
 var WorkersList = React.createClass({
   statics: {
     fetchData: function () {
       return {
-        workers: JsonClient.get('/api/workers')
+        workers: jsonClient.get('/api/workers')
       };
     }
   },

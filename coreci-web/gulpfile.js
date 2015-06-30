@@ -2,13 +2,13 @@ var argv = require('yargs').argv,
     browserify = require('browserify'),
     buffer = require('vinyl-buffer'),
     connect = require('connect'),
+    eslint = require('gulp-eslint'),
     gif = require('gulp-if'),
     gulp = require('gulp'),
     gutil = require('gulp-util'),
     less = require('gulp-less'),
     livereload = require('gulp-livereload'),
     minifyhtml = require('gulp-minify-html'),
-    path = require('path'),
     proxy = require('proxy-middleware'),
     reactify = require('reactify'),
     rewrite = require('connect-modrewrite'),
@@ -54,9 +54,8 @@ gulp.task('css', function () {
 gulp.task('javascript', function () {
   var bundler = browserify('./app/main.jsx')
     .transform(reactify);
-  return bundle();
 
-  function bundle() {
+  var bundle = function () {
     return bundler.bundle()
       .on('error', onerror)
       .pipe(source('app.js'))
@@ -67,7 +66,9 @@ gulp.task('javascript', function () {
       .pipe(gif(config.debug, sourcemaps.write('.')))
       .pipe(gulp.dest('./build/app'))
       .pipe(livereload({ auto: false }));
-  }
+  };
+
+  return bundle();
 });
 
 gulp.task('assets-favicon', function () {
@@ -80,7 +81,15 @@ gulp.task('assets-bootstrap-font', function () {
 });
 gulp.task('assets', ['assets-favicon', 'assets-bootstrap-font']);
 
-gulp.task('connect', ['build'], function (next) {
+gulp.task('lint-javascript', function () {
+  return gulp.src('./app/**/*.{js,jsx}')
+    .pipe(eslint())
+    .pipe(eslint.format())
+    .pipe(eslint.failOnError());
+});
+gulp.task('lint', ['lint-javascript']);
+
+gulp.task('connect', ['build'], function (/*next*/) {
   var serveStatic = require('serve-static');
   connect()
     .use('/api', proxy(url.parse('http://localhost:8080/api')))
@@ -100,5 +109,6 @@ gulp.task('watch', ['build'], function () {
 });
 
 gulp.task('build', ['html', 'css', 'javascript', 'assets']);
+gulp.task('test', ['lint']);
 gulp.task('server', ['connect', 'watch']);
 gulp.task('default', ['server']);

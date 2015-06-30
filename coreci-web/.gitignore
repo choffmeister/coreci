@@ -1,5 +1,6 @@
 # Build target
 build/
 
-# Node modules
+# Node
 node_modules/
+npm-debug.log

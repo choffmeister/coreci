@@ -1,8 +1,9 @@
 var React = require('react'),
     Link = require('react-router').Link,
     DateTime = require('../components/DateTime.jsx'),
-    JsonClient = require('../services/HttpClient').Json();
+    HttpClient = require('../services/HttpClient');
 
+var jsonClient = new HttpClient.Json();
 
 var ProjectsShow = React.createClass({
   contextTypes: {
@@ -12,14 +13,14 @@ var ProjectsShow = React.createClass({
   statics: {
     fetchData: function (params) {
       return {
-        project: JsonClient.get('/api/projects/' + params.projectCanonicalName),
-        builds: JsonClient.get('/api/projects/' + params.projectCanonicalName + '/builds')
+        project: jsonClient.get('/api/projects/' + params.projectCanonicalName),
+        builds: jsonClient.get('/api/projects/' + params.projectCanonicalName + '/builds')
       };
     }
   },
 
   run: function () {
-    JsonClient.post('/api/projects/' + this.props.data.project.canonicalName + '/run').then(build => {
+    jsonClient.post('/api/projects/' + this.props.data.project.canonicalName + '/run').then(build => {
       this.context.router.transitionTo('builds-show', { projectCanonicalName: build.projectCanonicalName, buildNumber: build.number });
     });
   },

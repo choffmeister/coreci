@@ -1,0 +1,19 @@
+{
+  "env": {
+    "node": true,
+    "browser": true
+  },
+  "ecmaFeatures": {
+    "arrowFunctions": true,
+    "jsx": true
+  },
+  "parser": "babel-eslint",
+  "plugins": [
+    "react"
+  ],
+  "rules": {
+    "quotes": [2, "single", "avoid-escape"],
+    "semi": [2, "always"],
+    "strict": 0
+  }
+}

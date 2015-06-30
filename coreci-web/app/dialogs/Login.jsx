@@ -1,7 +1,5 @@
 var React = require('react'),
     ReactBootstrap = require('react-bootstrap'),
-    Button = ReactBootstrap.Button,
-    Modal = ReactBootstrap.Modal,
     AccessToken = require('../services/AccessToken'),
     Callout = require('../components/Callout.jsx');
 
@@ -37,7 +35,7 @@ var Login = React.createClass({
           });
         }
       })
-      .catch(err => {
+      .catch(() => {
         this.reset();
         this.setState({
           message: {
@@ -52,7 +50,7 @@ var Login = React.createClass({
     this.setState({
       username: this.refs.username.getDOMNode().value,
       password: this.refs.password.getDOMNode().value
-    })
+    });
   },
 
   reset: function () {
@@ -70,7 +68,7 @@ var Login = React.createClass({
       message = <Callout kind={this.state.message.type}>{this.state.message.text}</Callout>;
     }
     return (
-      <Modal {...this.props} bsStyle="default" title="Login" animation={false} backdrop={true}>
+      <ReactBootstrap.Modal {...this.props} bsStyle="default" title="Login" animation={false} backdrop={true}>
         <form onSubmit={this.onSubmit} autoComplete="off">
           <div className="modal-body">
             {message}
@@ -84,11 +82,11 @@ var Login = React.createClass({
             </div>
           </div>
           <div className="modal-footer">
-            <Button onClick={this.onSubmit} type="submit">Login</Button>
-            <Button onClick={this.props.onRequestHide}>Cancel</Button>
+            <ReactBootstrap.Button onClick={this.onSubmit} type="submit">Login</ReactBootstrap.Button>
+            <ReactBootstrap.Button onClick={this.props.onRequestHide}>Cancel</ReactBootstrap.Button>
           </div>
         </form>
-      </Modal>
+      </ReactBootstrap.Modal>
     );
   }
 });

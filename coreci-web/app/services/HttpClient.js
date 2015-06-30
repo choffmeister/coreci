@@ -1,8 +1,10 @@
+/*eslint dot-notation: 0*/
+/*eslint no-alert: 0*/
 var Bluebird = require('bluebird'),
     extend = require('extend'),
     AccessToken = require('./AccessToken');
 
-var _request = function (method, url, body, options) {
+var rawRequest = function (method, url, body, options) {
   options = extend({
     headers: {}
   }, options);
@@ -11,7 +13,7 @@ var _request = function (method, url, body, options) {
     var xhr = new XMLHttpRequest();
 
     xhr.onreadystatechange = function () {
-      if (xhr.readyState == 4) {
+      if (xhr.readyState === 4) {
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve({
             status: xhr.status,
@@ -38,7 +40,7 @@ var _request = function (method, url, body, options) {
 
     xhr.open(method, url, true);
     Object.keys(options.headers).forEach(function (header) {
-      xhr.setRequestHeader(header, options.headers[header])
+      xhr.setRequestHeader(header, options.headers[header]);
     });
     xhr.send(body);
   });
@@ -93,9 +95,9 @@ var JsonHttpClient = function (request) {
 
 var withAuthentication = function (request, autoRenew) {
   var hasTokenExpired = function (err) {
-    if (err.status == 401) {
+    if (err.status === 401) {
       var authHeader = err.xhr.getResponseHeader('www-authenticate');
-      if (authHeader && authHeader.toLowerCase().substring(0, 7) == 'bearer ' && authHeader.indexOf('expired') > 0) {
+      if (authHeader && authHeader.toLowerCase().substring(0, 7) === 'bearer ' && authHeader.indexOf('expired') > 0) {
         return true;
       }
     }
@@ -107,12 +109,14 @@ var withAuthentication = function (request, autoRenew) {
       headers: {}
     }, options);
 
-    if (AccessToken.current()) options.headers['Authorization'] = 'Bearer ' + AccessToken.current();
     options.headers['X-WWW-Authenticate-Filter'] = 'Bearer';
+    if (AccessToken.current()) {
+      options.headers['Authorization'] = 'Bearer ' + AccessToken.current();
+    }
 
     return request(method, url, body, options)
       .catch(function (err) {
-        if (hasTokenExpired(err)) {
+        if (hasTokenExpired(err) && autoRenew) {
           return AccessToken.renew().then(function (token) {
             return token ? withAuthentication(request, false)(method, url, body, options) : Bluebird.reject(err);
           });
@@ -136,9 +140,9 @@ var withGlobalErrorAlert = function (request) {
 
 module.exports = {
   Raw: function () {
-    return HttpClient(withGlobalErrorAlert(withAuthentication(_request, true)));
+    return new HttpClient(withGlobalErrorAlert(withAuthentication(rawRequest, true)));
   },
   Json: function () {
-    return JsonHttpClient(withGlobalErrorAlert(withAuthentication(_request, true)));
+    return new JsonHttpClient(withGlobalErrorAlert(withAuthentication(rawRequest, true)));
   }
 };

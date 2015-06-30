@@ -1,13 +1,12 @@
-var React = require('react');
-    ReactRouter = require('react-router'),
-    RouteHandler = ReactRouter.RouteHandler,
+var React = require('react'),
     ReactBootstrap = require('react-bootstrap'),
-    Navbar = ReactBootstrap.Navbar,
+    ReactRouterBootstrap = require('react-router-bootstrap');
+
+var Navbar = ReactBootstrap.Navbar,
     Nav = ReactBootstrap.Nav,
     CollapsableNav = ReactBootstrap.CollapsableNav,
     NavItem = ReactBootstrap.NavItem,
     ModalTrigger = ReactBootstrap.ModalTrigger,
-    ReactRouterBootstrap = require('react-router-bootstrap'),
     NavItemLink = ReactRouterBootstrap.NavItemLink;
 
 var LoginDialog = require('../dialogs/Login.jsx');

@@ -1,24 +1,28 @@
+var Bluebird = require('bluebird');
+
 var parseBase64UrlSafe = function (b64) {
   return atob(b64.replace(/\-/g, '+').replace(/_/g, '/'));
 };
 
 var parseAccessToken = function (tokenStr) {
-  return JSON.parse(parseBase64UrlSafe(tokenStr.split('.')[1]));
+  var parsed = JSON.parse(parseBase64UrlSafe(tokenStr.split('.')[1]));
+  parsed.raw = tokenStr;
+  return parsed;
 };
 
 var obtainAccessToken = function (url, authorization) {
-  var promise = new Promise(function(resolve, reject) {
+  return new Bluebird(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
-      if (xhr.readyState == 4) {
+      if (xhr.readyState === 4) {
         switch (xhr.status) {
           case 200:
             try {
               var response = JSON.parse(xhr.responseText);
-              if (response.token_type == "bearer" && response.access_token) {
-                resolve(response.access_token);
+              if (response.token_type === 'bearer' && response.access_token) {
+                resolve(parseAccessToken(response.access_token));
               } else {
-                reject(new Error("Unsupported token response"));
+                reject(new Error('Unsupported token response'));
               }
             } catch (ex) {
               reject(ex);
@@ -29,7 +33,7 @@ var obtainAccessToken = function (url, authorization) {
             resolve(null);
             break;
           default:
-            reject(new Error("An unknown error occured"));
+            reject(new Error('An unknown error occured'));
             break;
         }
       }
@@ -39,11 +43,10 @@ var obtainAccessToken = function (url, authorization) {
     xhr.setRequestHeader('Authorization', authorization);
     xhr.setRequestHeader('X-WWW-Authenticate-Filter', 'Bearer');
     xhr.send();
-  });
-
-  return promise.then(function (at) {
-    window.localStorage.setItem('access_token', at);
-    return at;
+  }).tap(function (token) {
+    if (token) {
+      window.localStorage.setItem('access_token', token.raw);
+    }
   });
 };
 

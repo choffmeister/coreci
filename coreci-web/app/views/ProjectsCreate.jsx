@@ -1,8 +1,9 @@
 var React = require('react'),
-    ReactAddons = require('react/addons').addons,
-    Button = ReactBootstrap.Button,
-    Input = require('react-bootstrap').Input,
-    JsonClient = require('../services/HttpClient').Json();
+    ReactAddons = require('react/addons'),
+    ReactBootstrap = require('react-bootstrap'),
+    HttpClient = require('../services/HttpClient');
+
+var jsonClient = new HttpClient.Json();
 
 var slugify = function (text) {
   return text
@@ -15,7 +16,7 @@ var slugify = function (text) {
 };
 
 var ProjectsCreate = React.createClass({
-  mixins: [ReactAddons.LinkedStateMixin],
+  mixins: [ReactAddons.addons.LinkedStateMixin],
 
   contextTypes: {
     router: React.PropTypes.func
@@ -59,8 +60,8 @@ var ProjectsCreate = React.createClass({
       updatedAt: 0
     };
 
-    JsonClient.post('/api/projects', project).then(project => {
-      this.context.router.transitionTo('projects-show', { projectCanonicalName: project.canonicalName });
+    jsonClient.post('/api/projects', project).then(createdProject => {
+      this.context.router.transitionTo('projects-show', { projectCanonicalName: createdProject.canonicalName });
     });
   },
 
@@ -69,12 +70,12 @@ var ProjectsCreate = React.createClass({
       <div>
         <h1>Create project</h1>
         <form onSubmit={this.onSubmit}>
-          <Input type="text" label="Title" valueLink={this.linkState('title')}/>
-          <Input type="textarea" label="Description" valueLink={this.linkState('description')} rows="6"/>
-          <Input type="text" label="Image" valueLink={this.linkState('image')}/>
-          <Input type="textarea" label="Script" valueLink={this.linkState('script')} rows="10"/>
-          <Input type="textarea" label="Environment" valueLink={this.linkState('environment')} rows="4"/>
-          <Button onClick={this.onSubmit} type="submit">Create</Button>
+          <ReactBootstrap.Input type="text" label="Title" valueLink={this.linkState('title')}/>
+          <ReactBootstrap.Input type="textarea" label="Description" valueLink={this.linkState('description')} rows="6"/>
+          <ReactBootstrap.Input type="text" label="Image" valueLink={this.linkState('image')}/>
+          <ReactBootstrap.Input type="textarea" label="Script" valueLink={this.linkState('script')} rows="10"/>
+          <ReactBootstrap.Input type="textarea" label="Environment" valueLink={this.linkState('environment')} rows="4"/>
+          <ReactBootstrap.Button onClick={this.onSubmit} type="submit">Create</ReactBootstrap.Button>
         </form>
       </div>
     );
