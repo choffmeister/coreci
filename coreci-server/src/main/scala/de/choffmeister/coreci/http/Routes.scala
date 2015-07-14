@@ -3,7 +3,7 @@ package de.choffmeister.coreci.http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.managers._
 import de.choffmeister.coreci.models._
@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 trait Routes extends JsonProtocol {
   implicit val system: ActorSystem
   implicit val executor: ExecutionContext
-  implicit val materializer: FlowMaterializer
+  implicit val materializer: Materializer
   val database: Database
   val routes: Route
 

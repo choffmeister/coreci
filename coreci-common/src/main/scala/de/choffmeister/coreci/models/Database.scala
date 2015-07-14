@@ -2,7 +2,7 @@ package de.choffmeister.coreci.models
 
 import akka.http.scaladsl.model.Uri
 import reactivemongo.api._
-import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.bson._
 import reactivemongo.core.commands.Drop
 

@@ -3,7 +3,7 @@ package de.choffmeister.coreci
 import java.util.UUID
 
 import akka.actor.ActorSystem
-import akka.stream.ActorFlowMaterializer
+import akka.stream.ActorMaterializer
 import akka.testkit.{ImplicitSender, TestKitBase}
 import org.specs2.mutable.After
 
@@ -15,7 +15,7 @@ abstract class TestActorSystem extends { implicit val system = ActorSystem(UUID.
     with After
     with ImplicitSender {
   implicit val executor = system.dispatcher
-  implicit val materializer = ActorFlowMaterializer()
+  implicit val materializer = ActorMaterializer()
 
   def await[T](f: => Future[T]): T =
     Await.result(f, Duration.Inf)

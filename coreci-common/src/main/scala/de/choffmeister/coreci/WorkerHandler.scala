@@ -1,7 +1,7 @@
 package de.choffmeister.coreci
 
 import akka.actor._
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import de.choffmeister.coreci.models._
 import reactivemongo.bson.BSONObjectID
 
@@ -34,7 +34,7 @@ case object DispatchingState extends WorkerState
 case class RunningState(build: Build) extends WorkerState
 
 class WorkerHandler(database: Database, workerMap: Map[String, String])
-    (implicit executor: ExecutionContext, materializer: FlowMaterializer) extends Actor with ActorLogging {
+    (implicit executor: ExecutionContext, materializer: Materializer) extends Actor with ActorLogging {
   import WorkerHandlerProtocol._
   implicit val system = context.system
 

@@ -5,7 +5,7 @@ import java.util.Date
 import akka.actor._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import de.choffmeister.auth.common._
 import de.choffmeister.coreci.models._
 import spray.json.JsString
@@ -13,7 +13,7 @@ import spray.json.JsString
 import scala.concurrent.ExecutionContext
 
 class AuthRoutes(val database: Database)
-    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
+    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: Materializer) extends Routes {
   lazy val routes =
     pathPrefix("token") {
       path("create") {

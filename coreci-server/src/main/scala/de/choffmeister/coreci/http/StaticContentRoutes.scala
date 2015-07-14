@@ -4,12 +4,12 @@ import java.io.File
 
 import akka.actor._
 import akka.http.scaladsl.server.Directives._
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import de.choffmeister.coreci._
 
 import scala.concurrent.ExecutionContext
 
-class StaticContentRoutes(webDir: Option[File])(implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends JsonProtocol {
+class StaticContentRoutes(webDir: Option[File])(implicit system: ActorSystem, executor: ExecutionContext, materializer: Materializer) extends JsonProtocol {
   lazy val routes =
     webDir.map(_.toString) match {
       case Some(webDir) =>

@@ -6,7 +6,7 @@ import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model._
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import spray.json._
@@ -53,7 +53,7 @@ case class DockerRun(containerId: String, stream: Source[ByteString, Any])
  * @param materializer The flow materializer
  */
 class Docker(host: String, port: Int)
-    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
+    (implicit system: ActorSystem, executor: ExecutionContext, materializer: Materializer) extends Logger {
   def version(): Future[DockerVersion] = {
     jsonRequest(GET, Uri("/version")).map(_.get.asJsObject).map(DockerJsonProtocol.readVersion)
   }
@@ -202,7 +202,7 @@ class Docker(host: String, port: Int)
 
 object Docker {
   def open(uri: String)
-      (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer): Docker = {
+      (implicit system: ActorSystem, executor: ExecutionContext, materializer: Materializer): Docker = {
     val (host, port) = parseUri(uri)
     new Docker(host, port)
   }

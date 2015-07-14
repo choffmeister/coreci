@@ -1,6 +1,6 @@
 package de.choffmeister.coreci.models
 
-import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api.indexes._
 import reactivemongo.bson._
 

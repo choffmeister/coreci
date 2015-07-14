@@ -8,8 +8,8 @@ import com.typesafe.sbt.SbtGit.git
 object Build extends sbt.Build {
   lazy val dist = TaskKey[File]("dist", "Builds the distribution packages")
 
-  val akkaVersion = "2.3.11"
-  val akkaStreamHttpVersion = "1.0-RC3"
+  val akkaVersion = "2.3.12"
+  val akkaStreamHttpVersion = "1.0-RC4"
 
   lazy val buildSettings = Seq(
     scalaVersion := "2.11.6",
@@ -45,7 +45,7 @@ object Build extends sbt.Build {
       "io.spray" %% "spray-json" % "1.3.1",
       "org.apache.commons" % "commons-compress" % "1.9",
       "org.apache.logging.log4j" % "log4j-to-slf4j" % "2.2",
-      "org.reactivemongo" %% "reactivemongo" % "0.10.5.0.akka23"))
+      "org.reactivemongo" %% "reactivemongo" % "0.11.2"))
     .settings(serverPackSettings: _*)
     .settings(name := "coreci-common")
 

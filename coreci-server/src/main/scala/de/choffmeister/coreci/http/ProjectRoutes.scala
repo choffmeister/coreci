@@ -2,7 +2,7 @@ package de.choffmeister.coreci.http
 
 import akka.actor._
 import akka.http.scaladsl.server.Directives._
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import de.choffmeister.coreci._
 import de.choffmeister.coreci.models._
 import spray.json._
@@ -10,7 +10,7 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 
 class ProjectRoutes(val database: Database, workerHandler: ActorRef)
-    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
+    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: Materializer) extends Routes {
   lazy val routes =
     pathEnd {
       get {

@@ -6,14 +6,14 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import de.choffmeister.coreci.models._
 import reactivemongo.core.commands.LastError
 
 import scala.concurrent.ExecutionContext
 
 class ApiRoutes(val database: Database, workerHandler: ActorRef)
-    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: FlowMaterializer) extends Routes {
+    (implicit val system: ActorSystem, val executor: ExecutionContext, val materializer: Materializer) extends Routes {
   lazy val authRoutes = new AuthRoutes(database)
   lazy val projectRoutes = new ProjectRoutes(database, workerHandler)
   lazy val buildRoutes = new BuildRoutes(database, workerHandler)

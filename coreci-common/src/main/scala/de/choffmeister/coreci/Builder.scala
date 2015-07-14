@@ -1,7 +1,7 @@
 package de.choffmeister.coreci
 
 import akka.actor.ActorSystem
-import akka.stream.FlowMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.stream.stage.{SyncDirective, Context, PushPullStage}
 import akka.util.ByteString
@@ -12,7 +12,7 @@ import scala.util._
 import scala.concurrent._
 
 class Builder(db: Database, docker: Docker)
-    (implicit system: ActorSystem, executor: ExecutionContext, materializer: FlowMaterializer) extends Logger {
+    (implicit system: ActorSystem, executor: ExecutionContext, materializer: Materializer) extends Logger {
   val config = Config.load()
 
   def run(pending: Build): Future[Build] = {
