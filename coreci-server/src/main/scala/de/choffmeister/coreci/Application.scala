@@ -6,6 +6,7 @@ import org.rogach.scallop._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.language.reflectiveCalls
 
 object Application extends App with Logger {
@@ -46,7 +47,10 @@ object Application extends App with Logger {
   private def waitAndExit[T](f: Future[T]) = {
     import scala.util._
 
-    f.onComplete {
+    f.andThen { case _ =>
+      Database.mongoDbDriver.system.shutdown()
+      Database.mongoDbDriver.system.awaitTermination(3.seconds)
+    }.onComplete {
       case Success(_) =>
         System.exit(0)
       case Failure(ex) =>
