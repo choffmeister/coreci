@@ -66,6 +66,7 @@ object Build extends sbt.Build {
     .settings(name := "coreci-web")
 
   lazy val root = (project in file("."))
+    .settings(buildSettings: _*)
     .settings(coordinateSettings: _*)
     .settings(name := "coreci")
     .settings(dist <<= (streams, target, sbtPack in server, sbtNpmBuild in web) map { (s, target, server, web) =>

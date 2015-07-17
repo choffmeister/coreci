@@ -11,8 +11,11 @@ test:
     - echo "DOCKER_OPTS=\"-s btrfs -e lxc -H=tcp://127.0.0.1:2375\"" | sudo tee --append /etc/default/docker
     - sudo service docker restart
     - docker pull busybox:latest
+  override:
+    - sbt coverage test coverageAggregate
   post:
     - cp coreci-*/target/test-reports/* $CIRCLE_TEST_REPORTS
+    - cp -r target/scala-2.11/scoverage-report $CIRCLE_ARTIFACTS
 
 deployment:
   tarball:
