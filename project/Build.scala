@@ -9,7 +9,7 @@ object Build extends sbt.Build {
   lazy val dist = TaskKey[File]("dist", "Builds the distribution packages")
 
   val akkaVersion = "2.3.12"
-  val akkaStreamHttpVersion = "1.0-RC4"
+  val akkaStreamHttpVersion = "1.0"
 
   lazy val buildSettings = Seq(
     scalaVersion := "2.11.6",
